@@ -79,15 +79,14 @@ define([
 			var td;
 			if(item.href){
 				td = document.createElement("td");
-				td.style.verticalAlign = "top";
 
 				var urlInput = document.createElement("input");
-				urlInput.style.visibility = "hidden";
+				urlInput.classList.add("discreetInputHidden"); //$NON-NLS-0$
 
 				var urlSelector = document.createElement("div");
-				urlSelector.style.marginTop = "-15px";
 				urlSelector.title = messages.ClickEditLabel;
-				urlSelector.className = "discreetInput";
+				urlSelector.classList.add("discreetInput"); //$NON-NLS-0$
+				urlSelector.classList.add("discreetInputURLWrapper"); //$NON-NLS-0$
 				urlSelector.tabIndex = item.no;	//this is the same as the urlInput's tab index but they will never be visible at the same time
 
 				var urlLink = document.createElement("a");
@@ -100,9 +99,11 @@ define([
 
 				//show url input, hide selector
 				urlSelector.onclick = function (event){
-					urlSelector.style.visibility = "hidden";
-					urlLink.style.visibility = "hidden";
-					urlInput.style.visibility = "";
+					urlSelector.classList.add("discreetInputHidden"); //$NON-NLS-0$
+					urlLink.classList.add("discreetInputHidden"); //$NON-NLS-0$
+					
+					urlInput.classList.remove("discreetInputHidden"); //$NON-NLS-0$
+					
 					urlInput.focus();
 				}.bind(this.projectEditor);
 
@@ -124,13 +125,16 @@ define([
 				return td;
 			}
 			td = document.createElement("td");
-			td.style.verticalAlign = "top";
 			var input = item.id==="Description" ? document.createElement("textArea") : document.createElement("input");
 			this.projectEditor._renderEditableFields(input, item.id, item.no, null);
 			td.appendChild(input);
 			return td;
 		}
 
+	};
+	
+	ProjectInfoRenderer.prototype.getSecondaryColumnStyle = function() {
+		return "discreetInputCell"; //$NON-NLS-0$
 	};
 
 
@@ -203,6 +207,10 @@ define([
 			return td;
 		}
 
+	};
+	
+	AdditionalInfoRenderer.prototype.getSecondaryColumnStyle = function() {
+		return "discreetInfoCell"; //$NON-NLS-0$
 	};
 
 	function DependenciesModel(project, projectClient){
@@ -331,6 +339,8 @@ define([
 		this.actionScopeId = options.actionScopeId;
 		this.projectClient = options.projectClient;
 		this.emptyMessage = options.emptyMessage;
+		
+		this.launchConfigurationDispatcher = projectEditor.launchConfigurationDispatcher;
 	}
 
 	LaunchConfigurationRenderer.prototype = new mExplorer.SelectionRenderer();
@@ -497,7 +507,7 @@ define([
 						item.status = {State: "PROGRESS"};
 						td.innerHTML = this.getCellElement(col_no, item, tableRow).innerHTML;
 
-						service.getState(item.Params).then(function(result){
+						service.getState(item).then(function(result){
 							item.status = result;
 							var newTd = this.getCellElement(col_no, item, tableRow);
 							for(var i=0; i<td.classList.length; i++){
@@ -510,6 +520,7 @@ define([
 								newLogsColumn.classList.toggle(oldLogsColumn.classList[i], true);
 							}
 							tableRow.replaceChild(newLogsColumn, oldLogsColumn);
+							this.launchConfigurationDispatcher.dispatchEvent({type: "changeState", newValue: item}); //$NON-NLS-0$
 							return;
 						}.bind(this), function(error){
 							item.status = {error: error};
@@ -524,6 +535,7 @@ define([
 								newLogsColumn.classList.toggle(oldLogsColumn.classList[i], true);
 							}
 							tableRow.replaceChild(newLogsColumn, oldLogsColumn);
+							this.launchConfigurationDispatcher.dispatchEvent({type: "changeState", newValue: item}); //$NON-NLS-0$
 							return;
 						}.bind(this));
 					} else {
@@ -618,7 +630,7 @@ define([
 			this.node.className = "orionProject";
 			this.projectData = projectData;
 
-			function renderSections(sectionsOrder, sectionNames, emptyMessages){
+			function renderSections(sectionsOrder, sectionNames){
 				sectionNames = sectionNames || {};
 				sectionsOrder.forEach(function(sectionName){
 					var span;
@@ -626,7 +638,7 @@ define([
 						case "projectInfo":
 							span = document.createElement("span");
 							this.node.appendChild(span);
-							this.renderProjectInfo(span, sectionNames[sectionName], emptyMessages[sectionName]);
+							this.renderProjectInfo(span, sectionNames[sectionName]);
 							break;
 						case "additionalInfo":
 							span = document.createElement("span");
@@ -636,13 +648,13 @@ define([
 						case "deployment":
 							span = document.createElement("span");
 							this.node.appendChild(span);
-							this.renderLaunchConfigurations(span, null, sectionNames[sectionName], emptyMessages[sectionName]);
+							this.renderLaunchConfigurations(span, null, sectionNames[sectionName], messages["emptyDeploymentInfoMessage"]); //$NON-NLS-0$
 							break;
 						case "dependencies":
 							span = document.createElement("span");
 							span.id = "projectDependenciesNode";
 							this.node.appendChild(span);
-							this.renderDependencies(span, sectionNames[sectionName], emptyMessages[sectionName]);
+							this.renderDependencies(span, sectionNames[sectionName]);
 							break;
 					}
 				}.bind(this));
@@ -652,10 +664,9 @@ define([
 			this.preferences.getPreferences("/sectionsOrder").then(function(sectionsOrderPrefs){
 				sectionsOrder = sectionsOrderPrefs.get("projectView") || sectionsOrder;
 				var sectionsNames = sectionsOrderPrefs.get("projectViewNames") || [];
-				var emptyMessages = sectionsOrderPrefs.get("emptyMessages") || [];
-				renderSections.apply(this, [sectionsOrder, sectionsNames, emptyMessages]);
+				renderSections.apply(this, [sectionsOrder, sectionsNames]);
 			}.bind(this), function(error){
-				renderSections.apply(this, [sectionsOrder, {}, {}]);
+				renderSections.apply(this, [sectionsOrder, {}]);
 				window.console.error(error);
 			}.bind(this));
 
@@ -705,12 +716,12 @@ define([
 								lib.empty(urlElement);
 								urlElement.appendChild(document.createTextNode(event.target.value) || "");
 								urlElement.href = event.target.value;
-								urlElement.style.visibility = "";
+								urlElement.classList.remove("discreetInputHidden"); //$NON-NLS-0$
 								if(urlElement.urlSelector){
-									urlElement.urlSelector.style.visibility = "";
+									urlElement.urlSelector.classList.remove("discreetInputHidden"); //$NON-NLS-0$
 								}
 
-								input.style.visibility = "hidden";
+								input.classList.add("discreetInputHidden"); //$NON-NLS-0$
 							}
 						}
 					}.bind(this)
@@ -719,7 +730,7 @@ define([
 
 			input.value = this.projectData[property] || "";
 			input.title = messages.ClickEditLabel;
-			input.className = "discreetInput";
+			input.classList.add("discreetInput"); //$NON-NLS-0$
 			input.tabIndex = String(tabIndex);
 
 			input.onkeyup = function(event){

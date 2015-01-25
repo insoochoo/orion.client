@@ -33,15 +33,16 @@ define(['i18n!cfui/nls/messages', 'orion/webui/Wizard', 'orion/i18nUtil'], funct
 			var self = this;
 			return new mWizard.WizardPage({
 		    	template: '<div class="manifest formTable" id="debug"></div>' + //$NON-NLS-0$
-		    		'<table class="formTable">'+ //$NON-NLS-0$
-						'<tr>'+ //$NON-NLS-0$
-							'<td id="cfPasswordLabel" class="label"></td>'+ //$NON-NLS-0$
-							'<td id="cfPassword" class="selectCell"></td>'+ //$NON-NLS-0$
-						'</tr>'+ //$NON-NLS-0$
-						'<tr>'+ //$NON-NLS-0$
-							'<td id="cfUrlPrefixLabel" class="label"></td>'+ //$NON-NLS-0$
-							'<td id="cfUrlPrefix" class="selectCell"></td>'+ //$NON-NLS-0$
-						'</tr>'+ //$NON-NLS-0$
+		    		// TODO: Restore previous parameters
+		    		//'<table class="formTable">'+ //$NON-NLS-0$
+					//	'<tr>'+ //$NON-NLS-0$
+					//		'<td id="cfPasswordLabel" class="label"></td>'+ //$NON-NLS-0$
+					//		'<td id="cfPassword" class="selectCell"></td>'+ //$NON-NLS-0$
+					//	'</tr>'+ //$NON-NLS-0$
+					//	'<tr>'+ //$NON-NLS-0$
+					//		'<td id="cfUrlPrefixLabel" class="label"></td>'+ //$NON-NLS-0$
+					//		'<td id="cfUrlPrefix" class="selectCell"></td>'+ //$NON-NLS-0$
+					//	'</tr>'+ //$NON-NLS-0$
 					'</table>' + //$NON-NLS-0$
 					'<div class="manifest formTable" id="manifest"></div>', //$NON-NLS-0$
 					
@@ -51,7 +52,7 @@ define(['i18n!cfui/nls/messages', 'orion/webui/Wizard', 'orion/i18nUtil'], funct
 					if(!debugEnabled)
 						return callback(true);
 						
-					var cfLauncherPassword = self._cfLauncherPassword.value;
+					var cfLauncherPassword = ""; //self._cfLauncherPassword.value;
 					return callback(cfLauncherPassword && cfLauncherPassword.length > 0);
 				},
 		    		
@@ -77,21 +78,25 @@ define(['i18n!cfui/nls/messages', 'orion/webui/Wizard', 'orion/i18nUtil'], funct
 					label.appendChild(document.createTextNode("/" + manifestFolder + "manifest.yml")); //$NON-NLS-0$ //$NON-NLS-1$
 					manifestElement.appendChild(label);
 					
-					var debugElement = document.getElementById("debug"); //$NON-NLS-0$
-					var debugCheckbox = document.createElement("input"); //$NON-NLS-0$
-					debugCheckbox.type = "checkbox"; //$NON-NLS-0$
-					debugCheckbox.id = "debugApp"; //$NON-NLS-0$
+					if (localStorage.getItem("darklaunch")){
+						var debugElement = document.getElementById("debug"); //$NON-NLS-0$
+						var debugCheckbox = document.createElement("input"); //$NON-NLS-0$
+						debugCheckbox.type = "checkbox"; //$NON-NLS-0$
+						debugCheckbox.id = "debugApp"; //$NON-NLS-0$
+						
+						debugElement.appendChild(debugCheckbox);
+						self._debugCheckbox = debugCheckbox;
+						
+						label = document.createElement("label"); //$NON-NLS-0$
+						label.className = "manifestLabel"; //$NON-NLS-0$
+						
+						// label.innerHTML = i18nUtil.formatMessage(messages["debugWith${0}:"], "<a href=\"https://www.npmjs.org/package/cf-launcher\">cf-launcher</a>"); //$NON-NLS-1$
+						label.innerHTML = messages["runInDebugMode"];
+						debugElement.appendChild(label);
+					}
 					
-					debugElement.appendChild(debugCheckbox);
-					self._debugCheckbox = debugCheckbox;
-					
-					label = document.createElement("label"); //$NON-NLS-0$
-					label.className = "manifestLabel"; //$NON-NLS-0$
-					
-					label.innerHTML = i18nUtil.formatMessage(messages["debugWith${0}:"], "<a href=\"https://www.npmjs.org/package/cf-launcher\">cf-launcher</a>"); //$NON-NLS-1$
-					debugElement.appendChild(label);
-					
-					var cfPasswordLabel = document.getElementById("cfPasswordLabel"); //$NON-NLS-0$
+					// TODO: Restore previous parameters
+					/*var cfPasswordLabel = document.getElementById("cfPasswordLabel"); //$NON-NLS-0$
 					var passwordLabel = document.createTextNode(messages["password:"]);
 					cfPasswordLabel.appendChild(passwordLabel);
 					
@@ -128,14 +133,15 @@ define(['i18n!cfui/nls/messages', 'orion/webui/Wizard', 'orion/i18nUtil'], funct
 					
 					passwordInput.addEventListener("keyup", function(){ //$NON-NLS-0$
 						gandalfthewhite.validate();
-					});
+					});*/
 		    	},
 		    	
 	    	getResults: function(){
 		    		return {
+		    			// TODO: Restore previous parameters
 		    			saveManifest : self._saveManifestCheckbox.checked,
-		    			cfLauncherPassword : self._cfLauncherPassword.value,
-		    			cfLauncherURLPrefix : self._cfLauncherURLPrefix.value
+		    			cfLauncherPassword : "", //self._cfLauncherPassword.value,
+		    			cfLauncherURLPrefix : "" //self._cfLauncherURLPrefix.value
 		    		};
 		    	}
 		    });

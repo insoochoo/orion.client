@@ -17,7 +17,7 @@
 		  }
 		});
 
-		require(["../../../orion/plugin.js"], function(PluginProvider){
+		require(["orion/plugin"], function(PluginProvider){
 			
 			var headers = {
 				name : "Cloud Foundry Node.js Deployment Wizard",
@@ -33,7 +33,7 @@
 					return {
 						LocationTemplate : "{+OrionHome}/cfui/plugins/wizards/nodejs/nodeJSDeploymentWizard.html",
 						Width : "450px",
-						Height : "430px"
+						Height : "350px" //"430px" // TODO: Restore previous parameters
 					};
 				}
 			};

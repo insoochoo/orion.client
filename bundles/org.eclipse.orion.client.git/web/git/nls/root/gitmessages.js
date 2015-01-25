@@ -1,24 +1,21 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2012, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License v1.0
- * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution
- * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html).
- *
+ * Copyright (c) 2012 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials are made 
+ * available under the terms of the Eclipse Public License v1.0 
+ * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
+ * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
+ * 
  ******************************************************************************/
 /*eslint-env browser, amd*/
-
-//NLS_CHARSET=UTF-8
-
-define({
+define({//Default message bundle
 	"Compare": "Compare", //$NON-NLS-0$  //$NON-NLS-1$
 	"View the side-by-side compare": "View the side-by-side compare", //$NON-NLS-0$  //$NON-NLS-1$
 	"WorkingDirVer": "Open Working Directory", //$NON-NLS-0$  //$NON-NLS-1$
 	"Working Directory": "Working Directory", //$NON-NLS-0$  //$NON-NLS-1$
 	"ViewWorkingDirVer": "View the working directory version of the file", //$NON-NLS-0$  //$NON-NLS-1$
 	"Loading...": "Loading...", //$NON-NLS-0$  //$NON-NLS-1$
-	"Repositories": "All Git Repositories", //$NON-NLS-0$  //$NON-NLS-1$
+	"Repositories": "Git", //$NON-NLS-0$  //$NON-NLS-1$
 	"Repo": "Repositories", //$NON-NLS-0$  //$NON-NLS-1$
 	"0 on 1 - Git": "${0} on ${1} - Git", //$NON-NLS-0$  //$NON-NLS-1$
 	"Git": "Git", //$NON-NLS-0$  //$NON-NLS-1$
@@ -539,7 +536,7 @@ define({
 	"file": "file", //$NON-NLS-0$  //$NON-NLS-1$
 	"files": "files", //$NON-NLS-0$  //$NON-NLS-1$
 	"EmptyCommitConfirm": "You have no files selected. If you continue, you will end up with an empty commit. Do you want to continue?", //$NON-NLS-0$  //$NON-NLS-1$
-	"AlwaysSelectFiles": "Always select changed files (see Git Preferences)", //$NON-NLS-0$  //$NON-NLS-1$
+	"AlwaysSelectFiles": "Always select changed files (see Git Settings)", //$NON-NLS-0$  //$NON-NLS-1$
 	"EmptyCommitWarning": "The commit is empty", //$NON-NLS-0$  //$NON-NLS-1$
 	"FilesChangedVsReadyToCommit": "${0} ${1} changed. ${2} ${3} ready to commit.", //$NON-NLS-0$  //$NON-NLS-1$
 	"CommitPush": "Commit and Push", //$NON-NLS-0$  //$NON-NLS-1$

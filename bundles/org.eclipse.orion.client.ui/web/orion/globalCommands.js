@@ -29,6 +29,8 @@ define([
 	 * @name orion.globalCommands
 	 */
 
+	var METRICS_MAXLENGTH = 256;
+
 	var customGlobalCommands = {
 		createMenuGenerator: mCustomGlobalCommands.createMenuGenerator || function (serviceRegistry, keyAssistFunction) {
 			var userMenuPlaceholder = lib.node("userMenu"); //$NON-NLS-0$
@@ -556,7 +558,17 @@ define([
 	 * @param {Boolean} closeSplitter true to make the splitter's initial state "closed".
 	 */
 	function generateBanner(parentId, serviceRegistry, commandRegistry, prefsService, searcher, handler, /* optional */ editor, closeSplitter, fileClient) {
-		mMetrics.init(serviceRegistry);
+		mMetrics.initFromRegistry(serviceRegistry);
+		prefsService.addChangeListener(function(name, value) {
+			if (value.length < METRICS_MAXLENGTH) {
+				mMetrics.logEvent("preferenceChange", name, value); //$NON-NLS-0$
+			}
+		});
+		window.addEventListener("error", function(e) { //$NON-NLS-0$
+			var index = e.filename.lastIndexOf("/"); //$NON-NLS-0$
+			var errorString = e.message + " (" + e.filename.substring(index + 1) + ": " + e.lineno + (e.colno ? ", " + e.colno : "") + ")"; //$NON-NLS-3$ //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
+			mMetrics.logEvent("runtime", "uncaughtError", errorString); //$NON-NLS-1$ //$NON-NLS-0$
+		});
 
 		new mThemePreferences.ThemePreferences(prefsService, new mThemeData.ThemeData()).apply();
 

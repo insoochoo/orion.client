@@ -17,7 +17,9 @@
 			packages: [
 			]
 		});
-		require(["plugins/languages/markdown/markdownPlugin"]);
+		require(["plugins/languages/markdown/markdownPlugin"], function(markdownPlugin) {
+			markdownPlugin.connect();
+		});
 	</script>
 </head>
 

@@ -1,26 +1,24 @@
 /*******************************************************************************
  * @license
  * Copyright (c) 2012 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License v1.0
- * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution
- * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html).
- *
+ * All rights reserved. This program and the accompanying materials are made 
+ * available under the terms of the Eclipse Public License v1.0 
+ * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
+ * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
+ * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
+define({//Default message bundle
 	"Navigator": "Navigator",
 	"Sites": "Sites",
 	"Shell": "Shell",
-	"ShellLinkWorkspace": "Workspace Shell",
+	"ShellLinkWorkspace": "Shell",
 	"Get Plugins": "Get Plugins",
 	"Global": "Global",
 	"Editor": "Editor",
 	"EditorRelatedLink": "Show Current Folder",
 	"EditorRelatedLinkParent": "Show Enclosing Folder",
-	"EditorLinkWorkspace": "Show Workspace",
+	"EditorLinkWorkspace": "Edit",
 	"EditorRelatedLinkProj": "Show Project",
 	"Filter bindings": "Filter bindings",
 	"Orion Editor": "Orion Editor",
@@ -146,6 +144,5 @@ define({
 	"KeyPAGEDOWN": "Page Down",
 	"KeyPAGEUP": "Page Up",
 	"KeySPACE": "Space",
-	"KeyTAB": "Tab",
-	// End key names
+	"KeyTAB": "Tab"
 });

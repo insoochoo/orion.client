@@ -27,9 +27,10 @@ define([
 	'javascript/finder',
 	'javascript/signatures',
 	'eslint/load-rules-async',
-	'eslint/conf/environments'
+	'eslint/conf/environments',
+	'javascript/hover'
 ], function(typeEnv, typeInf, typeUtils, proposalUtils, mTemplates, JSSyntax, Templates, Deferred, Objects, Estraverse, Indexer,
-            Finder, Signatures, Rules, ESLintEnv) {
+            Finder, Signatures, Rules, ESLintEnv, Hover) {
 
 	/**
 	 * @description Creates a new delegate to create keyword and template proposals
@@ -37,7 +38,6 @@ define([
 	function TemplateProvider() {
 	    //constructor
  	}
- 	
 	TemplateProvider.prototype = new mTemplates.TemplateContentAssist(JSSyntax.keywords, []);
 	
 	Objects.mixin(TemplateProvider.prototype, {
@@ -211,11 +211,10 @@ define([
 			var self = this;
 			return Deferred.all([
 				this.astManager.getAST(editorContext),
-				editorContext.getText(), // TODO Can we avoid getText() here? The AST should have all we need.
 				this._createIndexData(editorContext, params)
 			]).then(function(results) {
-				var ast = results[0], buffer = results[1];
-				return self._computeProposalsFromAST(ast, buffer, params);
+				var ast = results[0];
+				return self._computeProposalsFromAST(ast, ast.source, params);
 			});
 
 		},
@@ -636,14 +635,15 @@ define([
 						continue;
 					}
 					if (proposalUtils.looselyMatches(context.prefix, propName)) {
-						var propTypeObj = type[prop].typeObj;
+					    var def = type[prop];
+						var propTypeObj = def.typeObj;
 						// if propTypeObj is a reference to a function type, extract the actual function type
 						if ((env._allTypes[propTypeObj.name]) && (env._allTypes[propTypeObj.name].$$fntype)) {
 							propTypeObj = env._allTypes[propTypeObj.name].$$fntype;
 						}
 						if (propTypeObj.type === 'FunctionType') {
 							var res = this._calculateFunctionProposal(propName, propTypeObj, replaceStart - 1);
-							proposals["$"+propName] = {
+							var proposal = {
 								proposal: res.completion,
 								name: res.completion,
 								description: this._createProposalDescription(propTypeObj, env),
@@ -655,7 +655,7 @@ define([
 								overwrite: true
 							};
 						} else {
-							proposals["$"+propName] = {
+							proposal = {
 								proposal: propName,
 								relevance: relevance,
 								name: propName,
@@ -664,6 +664,8 @@ define([
 								overwrite: true
 							};
 						}
+						proposal.hover = this._formatProposalHover(proposal, def, buffer);
+						proposals["$"+propName] = proposal;
 					}
 				}
 			}
@@ -896,7 +898,7 @@ define([
 							// on the right hand side of a dot with no text after, eg: foo.^
 							return { kind : 'member', toDefer : toDefer };
 						}
-						break
+						break;
 					case Estraverse.Syntax.Program:
 					case Estraverse.Syntax.BlockStatement:
 						break;
@@ -921,6 +923,39 @@ define([
 				}
 			}
 			return { kind : 'top', toDefer : toDefer };
+		},
+
+		/**
+		 * @description Computes the hover for the given proposal and type definition element. Returns null
+		 * if one cannot be computed.
+		 * @function
+		 * @private
+		 * @param {Object} proposal The computed proposal to format 
+		 * @param {Object} definition The definition for the type the proposal is for 
+		 * @returns {String | null} Returns the computed hover infos for the given proposal or null
+		 * @since 8.0
+		 */
+		_formatProposalHover: function _formatProposalHover(proposal, definition, buffer) {
+            if(proposal && definition) {
+                var obj = Object.create(null);
+                obj.type = 'markdown';
+                var hover = '';
+                if(!definition.$$doc) {
+                    if(definition.docRange) {
+                        hover += Hover.formatMarkdownHover(buffer.slice(definition.docRange[0], definition.docRange[1])).content;
+                    } else {
+                        hover += proposal.name;
+                    }
+                } else {
+                    hover += Hover.formatMarkdownHover(definition.$$doc).content;
+                }
+                if(definition.$$url) {
+                    hover += '\n\n[Online documentation]('+definition.$$url+')';
+                }
+                obj.content = hover;
+                return obj;
+            }		    
+            return null;
 		}
 	});
 	

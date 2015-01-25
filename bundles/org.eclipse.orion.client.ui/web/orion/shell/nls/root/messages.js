@@ -7,10 +7,8 @@
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
+define({//Default message bundle
 	"Shell": "Shell",
 	"Changed to: ": "Changed to: ",
 	"Initial directory: ": "Initial directory: ",

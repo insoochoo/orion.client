@@ -223,10 +223,12 @@ define([
 	function FileBrowser(options) {
 		var url = new URL(window.location.href);
 		this.shareCode = true;
+		this._downloadZip = true;
 		this.shareSnippet = url.query.get("shareSnippet") === "true" && options.widgetSource;
 		if(this.shareSnippet) {
 			this.widgetSource = options.widgetSource;
 		}
+		this._downloadURL = options.downloadURL;
 		this._parentDomNode = lib.node(options.parent);//Required
 		this.snippetShareOptions = options.snippetShareOptions;
 		if(!this.snippetShareOptions) {
@@ -322,18 +324,48 @@ define([
 			}
 		},
 		_registerCommands: function() {
-			var editCodeCommand = new mCommands.Command({
-				imageClass: "core-sprite-edit", //$NON-NLS-0$
-				id: "orion.browse.gotoEdit",
+			var downloadCommand = new mCommands.Command({
+				imageClass: "core-sprite-download-file-browser", //$NON-NLS-0$
+				id: "orion.browse.download", //$NON-NLS-0$
 				visibleWhen: function() {
-					return true;
+					return mFileDownloader.downloadSupported();
 				},
-				hrefCallback : function() {
-					return this.codeURL ? this.codeURL : (new URL("code", window.location.href)).href;
+				callback : function(data) {
+					var downloader = new mFileDownloader.FileDownloader(this._fileClient);
+					var items = Array.isArray(data.items) ? data.items : [data.items];
+					var contentType = this._contentTypeService.getFilenameContentType(items[0].Name);
+					var cmdRegistry = this._commandRegistry;
+					var actionNode = lib.node("file_browser_breadcrumb_action_node_id");
+					if(actionNode) {
+						lib.empty(actionNode);
+						actionNode.classList.add("core-sprite-progress"); //$NON-NLS-0$
+						//iconNode.classList.add("core-sprite-progress-file-browser"); //$NON-NLS-0$
+					}
+					downloader.downloadFromLocation(items[0], contentType).then(function(){
+						actionNode.classList.remove("core-sprite-progress"); //$NON-NLS-0$
+						cmdRegistry.renderCommands("orion.browse.breadcrumbActions", actionNode, items[0], "button"); //$NON-NLS-1$ //$NON-NLS-0$
+					});
 				}.bind(this)			
 			});
-			this._commandRegistry.addCommand(editCodeCommand);
-			this._commandRegistry.registerCommandContribution("orion.browse.sectionActions", "orion.browse.gotoEdit", 1); //$NON-NLS-1$ //$NON-NLS-0$
+			this._commandRegistry.addCommand(downloadCommand);
+			this._commandRegistry.registerCommandContribution("orion.browse.breadcrumbActions", "orion.browse.download", 1); //$NON-NLS-1$ //$NON-NLS-0$
+			var downloadZipCommand = new mCommands.Command({
+				imageClass: "core-sprite-download-file-browser", //$NON-NLS-0$
+				tooltip: "Download the contents of this branch as a zip file",
+				id: "orion.browse.downloadZip", //$NON-NLS-0$
+				visibleWhen: function() {
+					return !!this._downloadURL && this._downloadZip;
+				}.bind(this),
+				hrefCallback : function(data) {
+					var selectedBranch = this._branchSelector.getActiveResource();
+					if(selectedBranch) {
+						this._downloadURL.query.set("revstr", selectedBranch.Name);
+					}
+					return this._downloadURL.href;
+				}.bind(this)			
+			});
+			this._commandRegistry.addCommand(downloadZipCommand);
+			this._commandRegistry.registerCommandContribution("orion.browse.branchLevelActions", "orion.browse.downloadZip", 1); //$NON-NLS-1$ //$NON-NLS-0$
 		},
 		startup: function(serviceRegistry) {
 			if(serviceRegistry) {
@@ -349,7 +381,7 @@ define([
 				this.repoURLHandler = this.snippetShareOptions ? null : new repoURLHandler(this.repoURL, this.baseURL, this);
 			}
 			if(!this.snippetShareOptions) {
-				//this._registerCommands();
+				this._registerCommands();
 			}
 			this._inputManager = new mInputManager.InputManager({
 				fileClient: this._fileClient,

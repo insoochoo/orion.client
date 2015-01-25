@@ -101,25 +101,6 @@ var SyntaxChecker = (function () {
 							// Old API
 							promise = service.checkSyntax(title, contents);
 						}
-						var nls = validator.getProperty('nls');
-						if(nls) {
-						    promise = promise.then(function(results) {
-						       var len = 0;
-						       var probs = extractProblems(results);
-						       if((len = probs.length) > 0) {
-						           return i18nUtil.getMessageBundle(nls).then(function(bundle) {
-						               for(var i = 0; i < len; i++) {
-						                   var key = probs[i].descriptionKey;
-						                   if(key) {
-						                       var args = probs[i].descriptionArgs ? probs[i].descriptionArgs : Object.create(null);
-						                       probs[i].description = i18nUtil.formatMessage.call(null, bundle[key], args);
-						                   }
-						               }
-						               return results;
-						           });
-						       }
-						    });
-						}
 						return progress.progress(promise, "Validating " + title).then(extractProblems);
 					});
 					

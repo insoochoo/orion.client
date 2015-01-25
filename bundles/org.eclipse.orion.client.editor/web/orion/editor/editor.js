@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2009, 2014 IBM Corporation and others.
+ * Copyright (c) 2009, 2015 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License v1.0
  * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution
@@ -353,6 +353,14 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 			return this._lineNumberRuler;
 		},
 		/**
+		 * Returns the Tooltip instance for this editor
+		 *
+		 * @returns {orion.editor.Tooltip}
+		*/
+		getTooltip: function() {
+			return mTooltip.Tooltip.getTooltip(this._textView);
+		},
+		/**
 		 * Returns the zoom ruler of the editor.
 		 *
 		 * @returns {orion.editor.LineNumberRuler}
@@ -557,7 +565,7 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 		getCaretOffset: function() {
 			return this.mapOffset(this._textView.getCaretOffset());
 		},
-
+		
 		getSelection: function() {
 			var textView = this._textView;
 			var selection = textView.getSelection();
@@ -567,6 +575,19 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 				selection.end = model.mapOffset(selection.end);
 			}
 			return selection;
+		},
+
+		getSelections: function() {
+			var textView = this._textView;
+			var model = textView.getModel();
+			var selections = textView.getSelections();
+			selections.forEach(function(selection) {
+				if (model.getBaseModel) {
+					selection.start = model.mapOffset(selection.start);
+					selection.end = model.mapOffset(selection.end);
+				}
+			});
+			return selections;
 		},
 
 		_expandOffset: function(offset) {
@@ -624,6 +645,24 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 			}
 			textView.setSelection(start, end, show, callback);
 		},
+		setSelections: function(ranges, show, callback) {
+			var self = this;
+			var textView = this._textView;
+			var model = textView.getModel();
+			ranges.forEach(function(range) {
+				var start = range.start;
+				var end = range.end;
+				if (model.getBaseModel) {
+					self._expandOffset(start);
+					self._expandOffset(end);
+					start = model.mapOffset(start, true);
+					end = model.mapOffset(end, true);
+				}
+				range.start = start;
+				range.end = end;
+			});
+			textView.setSelections(ranges, show, callback);
+		},
 
 		/**
 		 * @param {Number} start
@@ -653,6 +692,7 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 			if (!annotationModel) { return null; }
 			var annotationStyler = this._annotationStyler;
 			if (!annotationStyler) { return null; }
+			if (!textView.isValidLineIndex(y)) { return null; }
 			var offset = textView.getOffsetAtLocation(x, y);
 			if (offset === -1) { return null; }
 			offset = this.mapOffset(offset);
@@ -663,46 +703,62 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 					rangeAnnotations.push(annotations[i]);
 				}
 			}
-			var pt = textView.convert({x: x, y: y}, "document", "page"); //$NON-NLS-1$ //$NON-NLS-0$
 			var info = {
 				contents: rangeAnnotations,
 				offset: offset,
-				anchor: "left", //$NON-NLS-0$
-				x: pt.x + 10,
-				y: pt.y + 20
+				position: "below", //$NON-NLS-0$
+				context: {source: "editor"} //$NON-NLS-0$
 			};
 			return info;
 		},
 
 		/** @private */
-		_highlightCurrentLine: function(newSelection, oldSelection) {
+		_highlightCurrentLine: function(newSelections, oldSelections) {
 			var annotationModel = this._annotationModel;
 			if (!annotationModel) { return; }
 			var textView = this._textView;
 			if (textView.getOptions("singleMode")) { return; } //$NON-NLS-0$
+			oldSelections = Array.isArray(oldSelections) ? oldSelections : [oldSelections];
+			newSelections = Array.isArray(newSelections) ? newSelections : [newSelections];
 			var model = textView.getModel();
-			var oldLineIndex = oldSelection ? model.getLineAtOffset(oldSelection.start) : -1;
-			var lineIndex = model.getLineAtOffset(newSelection.start);
-			var newEmpty = newSelection.start === newSelection.end;
-			var oldEmpty = !oldSelection || oldSelection.start === oldSelection.end;
-			var start = model.getLineStart(lineIndex);
-			var end = model.getLineEnd(lineIndex);
-			if (model.getBaseModel) {
-				start = model.mapOffset(start);
-				end = model.mapOffset(end);
+			function getHighlightLines(selections) {
+				var lines = {};
+				if (selections && selections.some(function(selection) {
+					if (selection && selection.isEmpty()) {
+						lines[model.getLineAtOffset(selection.start).toString()] = true;
+					} else {
+						return true;
+					}
+					return false;
+				})) return {};
+				return lines;
 			}
-			var annotation = this._currentLineAnnotation;
-			if (oldLineIndex === lineIndex && oldEmpty && newEmpty && annotation && annotation.start === start && annotation.end === end) {
-				return;
+			var oldLines = getHighlightLines(oldSelections);
+			var newLines = getHighlightLines(newSelections);
+			function compare(o, n) {
+				for (var p1 in o) {
+					if (!n[p1]) {
+						return true;
+					}
+				}
+				return false;
 			}
-			var remove = annotation ? [annotation] : null;
-			var add;
-			if (newEmpty) {
+			if (!(compare(oldLines, newLines) || compare(newLines, oldLines))) return;
+			var remove = this._currentLineAnnotations;
+			var add = [];
+			for (var p in newLines) {
+				var lineIndex = p >> 0;
+				var start = model.getLineStart(lineIndex);
+				var end = model.getLineEnd(lineIndex);
+				if (model.getBaseModel) {
+					start = model.mapOffset(start);
+					end = model.mapOffset(end);
+				}
 				var type = AT.ANNOTATION_CURRENT_LINE;
-				annotation = AT.createAnnotation(type, start, end);
-				add = [annotation];
+				var annotation = AT.createAnnotation(type, start, end);
+				add.push(annotation);
 			}
-			this._currentLineAnnotation = annotation;
+			this._currentLineAnnotations = add;
 			annotationModel.replaceAnnotations(remove, add);
 		},
 
@@ -720,6 +776,7 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 			this._textView = this._textViewFactory();
 			if (this._undoStackFactory) {
 				this._undoStack = this._undoStackFactory.createUndoStack(this);
+				this._textView.setOptions({undoStack: this._undoStack});
 				this.checkDirty();
 			}
 			if (this._textDNDFactory) {
@@ -729,9 +786,10 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 				var contentAssistMode = this._contentAssistFactory.createContentAssistMode(this);
 				this._contentAssist = contentAssistMode.getContentAssist();
 			}
+
+			var tooltip = mTooltip.Tooltip.getTooltip(this._textView);
 			if (this._hoverFactory) {
 				this._hover = this._hoverFactory.createHover(this);
-				var tooltip = mTooltip.Tooltip.getTooltip(this._textView);
 				tooltip.hover = this._hover;
 			}
 			
@@ -745,38 +803,57 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 				onMouseOver: function(e) {
 					self._listener.onMouseMove(e);
 				},
+				onMouseDown: function(e) {
+					self._listener.mouseDown = true;
+				},
+				onMouseUp: function(e) {
+					self._listener.mouseDown = false;
+				},
 				onMouseMove: function(e) {
-					var tooltip = mTooltip.Tooltip.getTooltip(textView);
-					if (!tooltip) { return; }
-					if (self._listener.lastMouseX === e.event.clientX && self._listener.lastMouseY === e.event.clientY) {
+					if (!tooltip || self._listener.mouseDown) { return; }
+
+					// Prevent spurious mouse event (e.g. on a scroll)					
+					if (e.event.clientX === self._listener.lastMouseX
+						&& e.event.clientY === self._listener.lastMouseY) {
 						return;
 					}
+					
 					self._listener.lastMouseX = e.event.clientX;
 					self._listener.lastMouseY = e.event.clientY;
-					tooltip.setTarget({
-						x: e.x,
-						y: e.y,
-						getTooltipInfo: function() {
-							return self._getTooltipInfo(this.x, this.y);
-						}
-					});
+
+					if (self._hoverTimeout) {
+						window.clearTimeout(self._hoverTimeout);
+						self._hoverTimeout = null;
+					}
+					self._hoverTimeout = window.setTimeout(function() {
+						self._hoverTimeout = null;
+						
+						// Re-check incase editor closed...
+						if (!self._listener)
+							return;
+							
+						if (!tooltip.OKToHover(self._listener.lastMouseX, self._listener.lastMouseY)) { return; }
+						tooltip.show({
+							clientX: self._listener.lastMouseX,
+							clientY: self._listener.lastMouseY,
+							x: e.x,							
+							y: e.y,							
+							getTooltipInfo: function() {
+								return self._getTooltipInfo(this.x, this.y);
+							}
+						});
+					}, 175);
 				},
 				onMouseOut: function(e) {
-					var tooltip = mTooltip.Tooltip.getTooltip(textView);
-					if (!tooltip) { return; }
-					if (self._listener.lastMouseX === e.event.clientX && self._listener.lastMouseY === e.event.clientY) {
-						return;
-					}
-					self._listener.lastMouseX = e.event.clientX;
-					self._listener.lastMouseY = e.event.clientY;
-					tooltip.setTarget(null);
+//					self._listener.lastMouseX = undefined;
+//					self._listener.lastMouseY = undefined;
 				},
 				onScroll: function(e) {
-					var tooltip = mTooltip.Tooltip.getTooltip(textView);
 					if (!tooltip) { return; }
-					tooltip.setTarget(null, 0, 0);
+					tooltip.hide();
 				},
 				onSelection: function(e) {
+					if (tooltip) { tooltip.hide(); }
 					self._updateCursorStatus();
 					self._highlightCurrentLine(e.newValue, e.oldValue);
 				}
@@ -785,6 +862,8 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 			textView.addEventListener("Selection", this._listener.onSelection); //$NON-NLS-0$
 			textView.addEventListener("MouseOver", this._listener.onMouseOver); //$NON-NLS-0$
 			textView.addEventListener("MouseOut", this._listener.onMouseOut); //$NON-NLS-0$
+			textView.addEventListener("MouseDown", this._listener.onMouseDown); //$NON-NLS-0$
+			textView.addEventListener("MouseUp", this._listener.onMouseUp); //$NON-NLS-0$
 			textView.addEventListener("MouseMove", this._listener.onMouseMove); //$NON-NLS-0$
 			textView.addEventListener("Scroll", this._listener.onScroll); //$NON-NLS-0$
 
@@ -939,7 +1018,7 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 			this._textView = this._undoStack = this._textDND = this._contentAssist =
 				this._listener = this._annotationModel = this._annotationStyler =
 				this._annotationRuler = this._overviewRuler = this._zoomRuler = this._lineNumberRuler =
-				this._foldingRuler = this._currentLineAnnotation = this._title = null;
+				this._foldingRuler = this._currentLineAnnotations = this._title = null;
 			this._dirty = false;
 			this._foldingRulerVisible = this._overviewRulerVisible = this._zoomRulerVisible =
 				this._lineNumberRulerVisible = this._annotationRulerVisible = undefined;
@@ -953,11 +1032,6 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 		},
 
 		_updateCursorStatus: function() {
-			var model = this.getModel();
-			var caretOffset = this.getCaretOffset();
-			var lineIndex = model.getLineAtOffset(caretOffset);
-			var lineStart = model.getLineStart(lineIndex);
-			var offsetInLine = caretOffset - lineStart;
 			// If we are in a mode and it owns status reporting, we bail out from reporting the cursor position.
 			var keyModes = this.getKeyModes();
 			for (var i=0; i<keyModes.length; i++) {
@@ -966,7 +1040,19 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 					return;
 				}
 			}
-			this.reportStatus(util.formatMessage(messages.lineColumn, lineIndex + 1, offsetInLine + 1));
+			var status;
+			var model = this.getModel();
+			var selections = this.getSelections();
+			if (selections.length > 1) {
+				status = util.formatMessage(messages.multiSelections, selections.length);
+			} else {
+				var caretOffset = selections[0].getCaret();
+				var lineIndex = model.getLineAtOffset(caretOffset);
+				var lineStart = model.getLineStart(lineIndex);
+				var offsetInLine = caretOffset - lineStart;
+				status = util.formatMessage(messages.lineColumn, lineIndex + 1, offsetInLine + 1);
+			}
+			this.reportStatus(status);
 		},
 
 		showAnnotations: function(annotations, types, createAnnotation, getType) {
@@ -1167,7 +1253,7 @@ define("orion/editor/editor", [ //$NON-NLS-0$
 			if (this._textView) {
 				this._textView.setText(contents);
 				this._textView.getModel().setLineDelimiter("auto"); //$NON-NLS-0$
-				this._highlightCurrentLine(this._textView.getSelection());
+				this._highlightCurrentLine(this._textView.getSelections());
 			}
 		},
 

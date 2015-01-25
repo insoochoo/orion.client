@@ -1,16 +1,14 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2012, 2014 IBM Corporation and others.
+ * Copyright (c) 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials are made 
  * available under the terms of the Eclipse Public License v1.0 
  * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
+define({//Default message bundle
 	"Navigator": "Navigator",
 	"Strings Xtrnalizr": "Strings Xtrnalizr",
 	"Externalize strings": "Externalize strings from JavaScript files in this folder.",
@@ -115,6 +113,7 @@ define({
 	"Downloading...": "Reading file contents...",
 	"Download not supported": "Contents download is not supported in this browser.",
 	"gettingContentFrom": "Getting content from ",
+	"deletingLaunchConfiguration": "Deleting launch configuration...",
 	"deployTo": "Deploy to ",
 	"deploy": "Deploy ",
 	"connect": "Connect",
@@ -132,7 +131,7 @@ define({
 	"manage": "Manage",
 	"manageThisApplicationOnRemote": "Manage this application on remote server",
 	"deleteLaunchConfiguration": "Delete this launch configuration",
-	"deployThisApplicationAgain": "Deploy this application again",
+	"deployThisApplication": "Deploy this application",
 	"associatedFolder": "Associated Folder",
 	"associateAFolderFromThe": "Associate a folder from the workspace with this project.",
 	"convertToProject": "Convert to project",
@@ -148,5 +147,12 @@ define({
 	'zipArchiveCommandTooltip': 'Create a project from a local zip archive.',  //$NON-NLS-0$  //$NON-NLS-1$
 	'Url:': 'Url:',  //$NON-NLS-0$  //$NON-NLS-1$
 	'notZip' : 'The following files are not zip files: ${0}. Would you like to continue the import?', //$NON-NLS-0$  //$NON-NLS-1$
-	'notZipMultiple' : 'There are multiple non-zip files being uploaded. Would you like to continue the import?' //$NON-NLS-0$  //$NON-NLS-1$
+	'notZipMultiple' : 'There are multiple non-zip files being uploaded. Would you like to continue the import?', //$NON-NLS-0$  //$NON-NLS-1$
+	"Cancel": "Cancel", //$NON-NLS-0$  //$NON-NLS-1$
+	"Ok": "Ok", //$NON-NLS-0$  //$NON-NLS-1$
+	"missingCredentials": "Enter the ${0} authentication credentials associated with ${1} to check its status.", //$NON-NLS-0$  //$NON-NLS-1$
+	"deploying": "deploying", //$NON-NLS-0$  //$NON-NLS-1$
+	"starting": "starting", //$NON-NLS-0$  //$NON-NLS-1$
+	"stopping": "stopping", //$NON-NLS-0$  //$NON-NLS-1$
+	"checkingStateShortMessage": "checking status" //$NON-NLS-0$  //$NON-NLS-1$
 });

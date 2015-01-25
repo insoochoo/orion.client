@@ -12,9 +12,8 @@
 /*global CSSLint*/
 /*eslint-env amd*/
 define("webtools/cssValidator", [ //$NON-NLS-0$
-	'csslint', //$NON-NLS-0$
 	'orion/objects' //$NON-NLS-0$
-], function(csslint, Objects) {
+], function(Objects) {
 
 	// TODO How to keep this list up to date with rules definitions, settings options and content assist
 	var config = {
@@ -77,7 +76,7 @@ define("webtools/cssValidator", [ //$NON-NLS-0$
 		 * @param {Object} [key] Optional key to use for complex rule configuration.
 		 */
 		setOption: function(ruleId, value, key) {
-			if (typeof value === "number") {
+			if (typeof value === "number") { //$NON-NLS-0$
 				if(Array.isArray(this.rules[ruleId])) {
 					var ruleConfig = this.rules[ruleId];
 					if (key) {
@@ -98,9 +97,11 @@ define("webtools/cssValidator", [ //$NON-NLS-0$
 	 * @description Creates a new validator
 	 * @constructor
 	 * @public
+	 * @param {Object} cssResultManager The back result manager
 	 * @since 6.0
 	 */
-	function CssValidator() {
+	function CssValidator(cssResultManager) {
+	    this.cssResultManager = cssResultManager;
 	}
 
 	Objects.mixin(CssValidator.prototype, /** @lends webtools.CssValidator.prototype*/ {
@@ -112,11 +113,15 @@ define("webtools/cssValidator", [ //$NON-NLS-0$
 		 * @param {orion.edit.EditorContext} editorContext The editor context
 		 * @param {Object} context The in-editor context (selection, offset, etc)
 		 * @returns {orion.Promise} A promise to compute some problems
+		 * @callback
 		 */
 		computeProblems: function(editorContext, context) {
 			var that = this;
-			return editorContext.getText().then(function(text) {
-				return that._computeProblems(text);
+			return that.cssResultManager.getResult(editorContext, config).then(function(results) {
+			    if(results) {
+			         return that._computeProblems(results);
+			    }
+			    return null;
 			});
 		},
 		
@@ -127,24 +132,96 @@ define("webtools/cssValidator", [ //$NON-NLS-0$
 		 * @param {String} contents The file contents
 		 * @returns {Array} The problem array
 		 */
-		_computeProblems: function(contents) {
-			var cssResult = csslint.verify(contents, config.getRuleSet()),
-			    messages = cssResult.messages,
+		_computeProblems: function(results) {
+			    var messages = results.messages,
 			    problems = [];
 			for (var i=0; i < messages.length; i++) {
 				var message = messages[i];
 				if (message.line) {
+					var range = this._getProblemRange(message);
 					var problem = {
+						id: this._getProblemId(message),
 						description: message.message,
 						line: message.line,
-						start: message.col,
-						end: message.col + message.evidence.length,
+						start: range.start,
+						end: range.end,
 						severity: message.type
 					};
 					problems.push(problem);
 				}
 			}
 			return {problems: problems};
+		},
+		
+		/**
+		 * @description Computes the problem id to use in the framework from the cssLint message
+		 * @param {Object} message The original CSSLint problem message
+		 * @returns {String} The problem id to pass into the framework
+		 * @since 8.0
+		 */
+		_getProblemId: function(message) {
+		    if(message.rule) {
+		        if(message.rule.id) {
+		            return message.rule.id;
+		        }
+		    }
+		    return null;
+		},
+		
+		/**
+		 * @description Computes the problem range (within the line) for the problem annotation
+		 * @param {Object} message The original CSSLint problem message
+		 * @returns {Object} Object containing start and end properties to pass into the framework
+		 * @since 8.0
+		 */
+		_getProblemRange: function(message) {
+			if (!message.rule || !message.rule.id || message.rule.id === "errors"){ //$NON-NLS-0$
+				// Parsing errors often don't have a token to select, so instead select the line
+				return {start: 1, end: message.evidence.length + 1};
+			}
+		    var token = this._findToken(message.evidence, message.col);
+		    var end = message.col + (token ? token.length : 1);
+		    return {start: message.col, end: end};
+		},
+		
+		_punc: '\n\t\r (){}[]:;,',  //$NON-NLS-0$
+		
+		/**
+		 * @description Returns the token or word found at the given offset
+		 * @param {String} contents The text to search for the token
+		 * @param {Number} offset The offset in the contents to start the search
+		 * @returns {String} Returns the computed token from the given string and offset or <code>null</code>
+		 * @since 8.0
+		 */
+		_findToken: function(contents, offset) {
+			if(contents && offset) {
+				var ispunc = this._punc.indexOf(contents.charAt(offset)) > -1;
+				var pos = ispunc ? offset-1 : offset;
+				while(pos >= 0) {
+					if(this._punc.indexOf(contents.charAt(pos)) > -1) {
+						break;
+					}
+					pos--;
+				}
+				var s = pos;
+				pos = offset;
+				while(pos <= contents.length) {
+					if(this._punc.indexOf(contents.charAt(pos)) > -1) {
+						break;
+					}
+					pos++;
+				}
+				if((s === offset || (ispunc && (s === offset-1))) && pos === offset) {
+					return null;
+				}
+				else if(s === offset) {
+					return contents.substring(s, pos);
+				}
+				else {
+					return contents.substring(s+1, pos);
+				}
+			}
+			return null;
 		},
 		
 		/**
@@ -192,6 +269,57 @@ define("webtools/cssValidator", [ //$NON-NLS-0$
 			config.setOption("unqualified-attributes", properties.validate_unqualified_attributes); //$NON-NLS-0$
 			config.setOption("vendor-prefix", properties.validate_vendor_prefix); //$NON-NLS-0$
 			config.setOption("zero-units", properties.validate_zero_units); //$NON-NLS-0$
+		},
+		
+		/**
+		 * @description Hook for the test suite to enable only the given rule, or set all rules to a certain severity
+		 * @function
+		 * @private
+		 * @param {String} ruleid The id for the rule, if null all rules will be set to the given severity
+		 * @param {Number} severity The desired severity or null
+		 * @since 8.0
+		 */
+		_enableOnly: function _enableOnly(ruleid, severity) {
+			config.archivedRules = {};
+		    var keys = Object.keys(config.rules);
+		    for(var i = 0; i < keys.length; i++) {
+		    	if (!ruleid){
+		    		config.archivedRules[keys[i]] = config.rules[ruleid];
+			        config.setOption(keys[i], severity ? severity : 2);
+		    	} else {
+			        if(keys[i] === ruleid) {
+			        	config.archivedRules[ruleid] = config.rules[ruleid];
+			            config.setOption(ruleid, severity ? severity : 2);
+			        } else {
+			        	config.archivedRules[keys[i]] = config.rules[ruleid];
+			            config.setOption(keys[i], 0);
+			        }
+		        }
+		    }
+		},
+		
+		/**
+		 * @description Hook for the test suite to restore the rule settings after 
+		 * calling _enableOnly.  Does not support complex rules (csslint doesn't have any currently)
+		 * @function
+		 * @private
+		 * @since 8.0
+		 */
+		_restoreRules: function _enableOnly() {
+			if (config.archivedRules){
+				config.rules = config.archivedRules;
+				config.archivedRules = undefined;
+			}
+		},
+	   
+	   /**
+	    * @description Hook for the parser test suite
+	    * @function 
+	    * @private 
+	    * @since 8.0
+	    */
+		_defaultRuleSet: function _defaultConfig() {
+		    return config.getRuleSet();
 		}
 	});
 	

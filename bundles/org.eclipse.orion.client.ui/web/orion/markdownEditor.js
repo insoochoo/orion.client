@@ -91,7 +91,7 @@ define([
 
 	function processRefLinks(string) {
 		/* add ref ids on successfully-resolved ref links */
-		string = string.replace(refLinkIDRegex, function(match, p1) {
+		string = string.replace(refLinkIDRegex, /* @callback */ function(match, p1) {
 			return '" ' + ATTRIBUTE_REFID + '="' + p1 + '"'; //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
 		});
 
@@ -129,7 +129,8 @@ define([
 	};
 
 	MarkdownStylingAdapter.prototype = {
-		blockSpansBeyondEnd: function(/*block*/) {
+		/** @callback */
+		blockSpansBeyondEnd: function(block) {
 			return false;
 		},
 		computeBlocks: function(model, text, block, offset/*, startIndex, endIndex, maxBlockCount*/) {
@@ -252,11 +253,9 @@ define([
 
 					if (tokens[i].type === "blockquote_start") { //$NON-NLS-0$
 						endToken = "blockquote_end"; //$NON-NLS-0$
-						var contentStartRegex = this._blockquoteStartRegex;
 						name = "markup.quote.markdown"; //$NON-NLS-0$
 					} else { /* list_start */
 						endToken = "list_end"; //$NON-NLS-0$
-						contentStartRegex = null;
 						name = "markup.list.markdown"; //$NON-NLS-0$
 					}
 
@@ -284,7 +283,6 @@ define([
 					match = this._newlineRegex.exec(text);
 					if (match) {
 						index = match.index + match[0].length;
-
 						if (name === "markup.list.markdown") { //$NON-NLS-0$
 							/* for lists claim whitespace that starts the next line */
 							this._spacesAndTabsRegex.lastIndex = index;
@@ -296,11 +294,15 @@ define([
 					}
 
 					/* compute the block's contentStart bound */
-					if (contentStartRegex) {
-						contentStartRegex.lastIndex = start;
-						match = contentStartRegex.exec(text);
+					if (name === "markup.quote.markdown") { //$NON-NLS-0$
+						this._blockquoteStartRegex.lastIndex = start;
+						match = this._blockquoteStartRegex.exec(text);
 						var contentStart = start + match[0].length;
 					} else {
+						/* marked.Lexer.rules.normal.bullet is not global, so cannot set its lastIndex */
+						var tempText = text.substring(start);
+						match = marked.Lexer.rules.normal.bullet.exec(tempText);
+						start += match.index;
 						contentStart = start;
 					}
 					index = Math.max(index, contentStart);
@@ -350,7 +352,7 @@ define([
 					/* compute the block's contentStart bound */
 
 					/* marked.Lexer.rules.normal.bullet is not global, so cannot set its lastIndex */
-					var tempText = text.substring(start);
+					tempText = text.substring(start);
 					match = marked.Lexer.rules.normal.bullet.exec(tempText);
 					contentStart = start + match.index + match[0].length;
 					index = Math.max(index, contentStart);
@@ -468,7 +470,8 @@ define([
 
 			return result;
 		},
-		computeStyle: function(/*block, model, offset*/) {
+		/** @callback */
+		computeStyle: function(block, model, offset) {
 			return null;
 		},
 		createBlock: function(bounds, styler, model, parent, data, initFn) {
@@ -480,11 +483,16 @@ define([
 		getBlockContentStyleName: function(block) {
 			return block.name;
 		},
-		getBlockEndStyle: function(/*block, text, endIndex, _styles*/) {
+		/** @callback */
+		getBlockEndStyle: function(block, text, endIndex, _styles) {
 			return null;
 		},
-		getBlockStartStyle: function(/*block, text, index, _styles*/) {
-			return null;
+		getBlockFoldBounds: function(block, model) {
+			var result = {start: block.start, end: block.end};
+			if (model.getText(block.end - 1, block.end) === this._NEWLINE) {
+				result.end--;
+			}
+			return result;
 		},
 		getBlockForElement: function(element) {
 			if (element === previewDiv) {
@@ -496,10 +504,15 @@ define([
 			}
 			return this.getBlockForElement(element.parentElement);
 		},
+		/** @callback */
+		getBlockStartStyle: function(block, text, index, _styles) {
+			return null;
+		},
 		getBlockWithId: function(elementId) {
 			return this._blocksCache[elementId];
 		},
-		getBracketMatch: function(/*block, text*/) {
+		/** @callback */
+		getBracketMatch: function(block, text) {
 			return null;
 		},
 		getContentType: function() {
@@ -1229,7 +1242,7 @@ define([
 											URL.revokeObjectURL(objectURL);
 										}
 									}.bind(this),
-									function(/*e*/) {
+									/* @callback */ function(e) {
 										var element = document.getElementById(id);
 										if (element) {
 											element.src = "missing"; //$NON-NLS-0$
@@ -1419,7 +1432,8 @@ define([
 
 		this._sourceSelectionListener = function(e) {
 			var model = this._editorView.editor.getTextView().getModel();
-			var selectionIndex = model.mapOffset(e.newValue.start);
+			var selection = Array.isArray(e.newValue) ? e.newValue[0] : e.newValue;
+			var selectionIndex = model.mapOffset(selection.start);
 			var block = this._styler.getBlockAtIndex(selectionIndex);
 
 			var element = this._stylerAdapter.getElementByIdentifier(block.elementId);
@@ -1449,7 +1463,7 @@ define([
 			 * event listener will take care of this.
 			 */
 			var textView = this._editorView.editor.getTextView();
-			var lineIndex = textView.getLineAtOffset(e.newValue.start);
+			var lineIndex = textView.getLineAtOffset(selection.start);
 			var topIndex = textView.getTopIndex(true);
 			var bottomIndex = textView.getBottomIndex(true);
 			if (!(topIndex <= lineIndex && lineIndex <= bottomIndex)) {
@@ -1460,7 +1474,7 @@ define([
 			this._alignPreviewOnSourceBlock(block, selectionIndex);
 		}.bind(this);
 
-		this._splitterResizeListener = function(/*e*/) {
+		this._splitterResizeListener = /* @callback */ function(e) {
 			this._editorView.editor.resize();
 		}.bind(this);
 
@@ -1739,7 +1753,8 @@ define([
 			visibleWhen: function() {
 				return !!this._options;
 			}.bind(this),
-			callback: function(/*data*/) {
+			/** @callback */
+			callback: function(data) {
 				var textView = options.editorView.editor.getTextView();
 				var text = textView.getText();
 				exportHTML(text, options.fileService, options.metadata, options.statusService);
@@ -1757,7 +1772,7 @@ define([
 		ID = "markdown.toggle.orientation"; //$NON-NLS-0$
 		toggleOrientationCommand = new mCommands.Command({
    			id: ID,
-			callback: function(/*data*/) {
+			callback: /* @callback */ function(data) {
 				this.editor.togglePaneOrientation();
 			}.bind(this),
 			type: "switch", //$NON-NLS-0$

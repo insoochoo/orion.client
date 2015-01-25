@@ -82,18 +82,18 @@ define(['i18n!cfui/nls/messages', 'orion/xhr', 'orion/plugin', 'orion/cfui/cFCli
 	provider.registerService("orion.core.setting", null, {
 		settings: [{
 			pid: "org.eclipse.orion.client.cf.settings",
-			nameKey: "URLs",
+			name: messages["URLs"],
 			nls: "cfui/nls/messages",
 			category: "cloud",
 			categoryKey: "Cloud Foundry",
 			properties: [{
 				id: "targetUrl",
-				nameKey: "API URL",
+				name: messages["API URL"],
 				type: "string",
 				defaultValue: apiUrl
 			}, {
 				id: "manageUrl",
-				nameKey: "Manage URL",
+				name: messages["Manage URL"],
 				type: "string",
 				defaultValue: manageUrl
 			}]
@@ -588,14 +588,14 @@ define(['i18n!cfui/nls/messages', 'orion/xhr', 'orion/plugin', 'orion/cfui/cFCli
 	var appLogsImpl = {
 		callback: function(args, context) {
 			return cFService.getLogz(null, args.app).then(function(result) {
-				var messages = result.Messages;
+				var logs = result.Messages;
 				
-				if (!messages || messages.length === 0) {
+				if (!logs || logs.length === 0) {
 					return messages["noRecentLogs."];
 				}
 				var strResult = "";
-				messages.forEach(function(message) {
-					strResult += "\n" + message;
+				logs.forEach(function(log) {
+					strResult += "\n" + log;
 				});
 				return strResult;
 			});

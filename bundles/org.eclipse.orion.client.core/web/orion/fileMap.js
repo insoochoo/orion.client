@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2014 IBM Corporation and others.
+ * Copyright (c) 2014, 2015 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials are made 
  * available under the terms of the Eclipse Public License v1.0 
  * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
@@ -38,7 +38,6 @@ define([], function() {
         "helpContent": {source: "org.eclipse.orion.client.help/web/helpContent"},
         "htmlparser": {source: "org.eclipse.orion.client.webtools/web/htmlparser"},
         "images"	: {source: "org.eclipse.orion.client.ui/web/images"},
-        "import"	: {source: "org.eclipse.orion.client.ui/web/import"},
         "javascript": {source: "org.eclipse.orion.client.javascript/web/javascript"},
         "jsdiff"	: {source: "org.eclipse.orion.client.ui/web/jsdiff"},
         "js-tests/core"	: {source: "org.eclipse.orion.client.core/web/js-tests/core"},
@@ -111,7 +110,6 @@ define([], function() {
         "orion/sites"		: {source: "org.eclipse.orion.client.ui/web/orion/sites"},
         "orion/ssh"		: {source: "org.eclipse.orion.client.ui/web/orion/ssh"},
         "orion/stringexternalizer": {source: "org.eclipse.orion.client.ui/web/orion/stringexternalizer"},
-        "orion/terminal"		: {source: "org.eclipse.orion.client.ui/web/orion/terminal"},
         "orion/webui"		: {source: "org.eclipse.orion.client.ui/web/orion/webui"},
         "orion/widgets"		: {source: "org.eclipse.orion.client.ui/web/orion/widgets"},
         "orion/profile"		: {source: "org.eclipse.orion.client.users/web/orion/profile"},
@@ -137,7 +135,7 @@ define([], function() {
         "plugins/gitBlamePlugin.js"	: {source: "org.eclipse.orion.client.ui/web/plugins/gitBlamePlugin.js"},
         "plugins/GitHubFilePlugin.html"	: {source: "org.eclipse.orion.client.ui/web/plugins/GitHubFilePlugin.html"},
         "plugins/GitHubFilePlugin.js"	: {source: "org.eclipse.orion.client.ui/web/plugins/GitHubFilePlugin.js"},
-        "plugins/googleAnalyticsPlugin.js"	: {source: "org.eclipse.orion.client.ui/web/plugins/googleAnalyticsPlugin.js"},
+        "plugins/metrics/googleAnalyticsPlugin.js"	: {source: "org.eclipse.orion.client.ui/web/plugins/metrics/googleAnalyticsPlugin.js"},
         "plugins/HoverTestPlugin2.html"	: {source: "org.eclipse.orion.client.ui/web/plugins/HoverTestPlugin2.html"},
         "plugins/HoverTestPlugin2.js"	: {source: "org.eclipse.orion.client.ui/web/plugins/HoverTestPlugin2.js"},
         "plugins/HTML5LocalFilePlugin.html": {source: "org.eclipse.orion.client.ui/web/plugins/HTML5LocalFilePlugin.html"},
@@ -172,7 +170,6 @@ define([], function() {
         "shell"		: {source: "org.eclipse.orion.client.ui/web/shell"},
         "sites"		: {source: "org.eclipse.orion.client.ui/web/sites"},
         "stringexternalizer": {source: "org.eclipse.orion.client.ui/web/stringexternalizer"},
-        "terminal"	: {source: "org.eclipse.orion.client.ui/web/terminal"},
         "webapp"		: {source: "org.eclipse.orion.client.ui/web/webapp"},
         "webtools"	: {source: "org.eclipse.orion.client.webtools/web/webtools" }
     };

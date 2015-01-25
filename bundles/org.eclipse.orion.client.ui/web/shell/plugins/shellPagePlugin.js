@@ -11,8 +11,9 @@
  *******************************************************************************/
 /*eslint-env browser, amd*/
 define([
-	'orion/plugin'
-], function(PluginProvider) {
+	'orion/plugin',
+	'i18n!orion/shell/nls/messages'
+], function(PluginProvider, messages) {
 	var headers = {
 		name: "Orion Shell Page Service",
 		version: "1.0",
@@ -22,10 +23,9 @@ define([
 	var provider = new PluginProvider(headers);
 	
 	provider.registerService("orion.navigate.command", {}, {
-		nameKey: "Shell",
+		name: messages["Shell"],
 		id: "eclipse.shell.open",
-		tooltipKey: "Open Shell page",
-		nls: "orion/shell/nls/messages",
+		tooltip: messages["Open Shell page"],
 		validationProperties: [{
 			source: "ChildrenLocation|ContentLocation",
 			variableName: "ShellLocation",
@@ -39,21 +39,6 @@ define([
 		category: "shell",
 		order: 10 // First link in Shell category
 	});
-
-//	// Removed, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=427617
-//	provider.registerService("orion.page.link.related", null, {
-//		nameKey: "Shell",
-//		id: "eclipse.shell.open",
-//		tooltipKey: "Open Shell page",
-//		nls: "orion/shell/nls/messages",
-//		category: "shell",
-//		order: 10, // same rank as the other related link, but these 2 links should never be rendered simultaneously, so OK.
-//		validationProperties: [{
-//			source: "NoTarget"
-//		}],
-//		uriTemplate: "{+OrionHome}/shell/shellPage.html#",
-//		forceSingleItem: true
-//	});
 
 	provider.connect();
 });

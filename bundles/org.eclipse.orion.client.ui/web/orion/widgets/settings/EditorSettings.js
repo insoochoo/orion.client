@@ -279,15 +279,7 @@ define("orion/widgets/settings/EditorSettings", //$NON-NLS-0$
 				}
 			}
 
-			if (!this.local && this.editorThemeWidget) {
-				this.editorThemeSection = new mSection.Section(this.sections, {
-					id: "editorThemeSettings", //$NON-NLS-0$
-					title: messages.EditorThemes,
-					slideout: true
-				});
-
-				this.editorThemeWidget.renderData( this.editorThemeSection.getContentElement(), 'INITIALIZE' ); //$NON-NLS-0$
-			} else {
+			if (this.local) {
 				var themeStyles = this.oldThemeStyles;
 				if (prefs.fontSizeVisible && (!this.local || prefs.fontSizeLocalVisible)) {
 					var fontSize = themeStyles.style.styles.fontSize;
@@ -496,10 +488,6 @@ define("orion/widgets/settings/EditorSettings", //$NON-NLS-0$
 		destroy: function() {
 			if (this.node) {
 				this.node = null;
-			}
-			if (this.editorThemeWidget) {
-				this.editorThemeWidget.destroy();
-				this.editorThemeWidget = null;
 			}
 		}
 	});

@@ -753,7 +753,7 @@ define(["require", "i18n!orion/shell/nls/messages", "orion/bootstrap", "orion/co
 						iframe.id = name;
 						iframe.name = name;
 						iframe.type = "text/html"; //$NON-NLS-0$
-						iframe.sandbox = "allow-scripts allow-same-origin"; //$NON-NLS-0$
+						iframe.sandbox = "allow-scripts allow-same-origin allow-forms"; //$NON-NLS-0$
 						iframe.frameborder = 1;
 						iframe.src = href;
 						iframe.className = "delegatedUI"; //$NON-NLS-0$
@@ -1094,31 +1094,15 @@ define(["require", "i18n!orion/shell/nls/messages", "orion/bootstrap", "orion/co
 
 				var returnType = ref.getProperty("returnType") || "string"; //$NON-NLS-1$ //$NON-NLS-0$
 
-				if (ref.getProperty("nls") && ref.getProperty("descriptionKey")){  //$NON-NLS-1$ //$NON-NLS-0$
-					i18nUtil.getMessageBundle(ref.getProperty("nls")).then( //$NON-NLS-0$
-						function(ref, commandMessages) {
-							var name = ref.getProperty("name"); //$NON-NLS-0$
-							shell.registerCommand({
-								name: name,
-								description: commandMessages[ref.getProperty("descriptionKey")], //$NON-NLS-0$
-								callback: contributedExecFunc(service, name, progress, returnType, !outputFound),
-								returnType: "html", //$NON-NLS-0$
-								parameters: parameters,
-								manual: commandMessages[ref.getProperty("manual")] //$NON-NLS-0$
-							});
-						},
-						ref);
-				} else {
-					var name = ref.getProperty("name"); //$NON-NLS-0$
-					shell.registerCommand({
-						name: name,
-						description: ref.getProperty("description"), //$NON-NLS-0$
-						callback: contributedExecFunc(service, name, progress, returnType, !outputFound),
-						returnType: "html", //$NON-NLS-0$
-						parameters: parameters,
-						manual: ref.getProperty("manual") //$NON-NLS-0$
-					});
-				}
+				var name = ref.getProperty("name"); //$NON-NLS-0$
+				shell.registerCommand({
+					name: name,
+					description: ref.getProperty("description") || ref.getProperty("descriptionKey"), //$NON-NLS-0$
+					callback: contributedExecFunc(service, name, progress, returnType, !outputFound),
+					returnType: "html", //$NON-NLS-0$
+					parameters: parameters,
+					manual: ref.getProperty("manual") //$NON-NLS-0$
+				});
 			}
 		}
 
@@ -1151,11 +1135,7 @@ define(["require", "i18n!orion/shell/nls/messages", "orion/bootstrap", "orion/co
 			);
 		});
 
-		if (window.orionPageLoadStart) {
-			var interval = new Date().getTime() - window.orionPageLoadStart;
-			mMetrics.logTiming("page", "interactive", interval, window.location.pathname); //$NON-NLS-1$ //$NON-NLS-0$
-			mMetrics.logTiming("page", "complete", interval, window.location.pathname); //$NON-NLS-1$ //$NON-NLS-0$
-			window.orionPageLoadStart = undefined;
-		}
+		mMetrics.logPageLoadTiming("interactive", window.location.pathname); //$NON-NLS-0$
+		mMetrics.logPageLoadTiming("complete", window.location.pathname); //$NON-NLS-0$
 	});
 });

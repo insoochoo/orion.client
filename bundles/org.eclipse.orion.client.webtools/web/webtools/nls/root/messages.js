@@ -1,25 +1,28 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License v1.0
- * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution
- * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html).
- *
+ * Copyright (c) 2014, 2015 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials are made 
+ * available under the terms of the Eclipse Public License v1.0 
+ * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
+ * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
+ * 
  ******************************************************************************/
-//NLS_CHARSET=UTF-8
-/*eslint-env amd*/
-define({
+/* eslint-env amd */
+define({//Default message bundle
 	'htmlOutline' : 'HTML Outline', //$NON-NLS-0$  //$NON-NLS-1$
+	'htmlHover' : 'HTML Hover', //$NON-NLS-0$  //$NON-NLS-1$
 	'cssOutline' : 'CSS Rule Outline', //$NON-NLS-0$  //$NON-NLS-1$
-	'htmlContentAssist' : 'HTML content assist', //$NON-NLS-0$  //$NON-NLS-1$
-	'cssContentAssist' : 'CSS content assist', //$NON-NLS-0$  //$NON-NLS-1$
+	'htmlContentAssist' : 'HTML Content Assist', //$NON-NLS-0$  //$NON-NLS-1$
+	'cssContentAssist' : 'CSS Content Assist', //$NON-NLS-0$  //$NON-NLS-1$
+	'cssHover' : 'CSS Hover', //$NON-NLS-0$  //$NON-NLS-1$
+	'csslintValidator' : 'CSS Validator', //$NON-NLS-0$  //$NON-NLS-1$
 	
-	'csslintValidator' : 'CSS Validator',
-	'ignore' : 'Ignore',
-	'warning' : 'Warning',
-	'error' : 'Error',
+	// Validator Severities
+	'ignore' : 'Ignore', //$NON-NLS-0$  //$NON-NLS-1$
+	'warning' : 'Warning', //$NON-NLS-0$  //$NON-NLS-1$
+	'error' : 'Error', //$NON-NLS-0$  //$NON-NLS-1$
 	
+	// CSS Validator Settings
 	'adjoining-classes': 'Disallow adjoining classes:', //$NON-NLS-0$  //$NON-NLS-1$
 	'box-model': 'Beware of broken box size:', //$NON-NLS-0$  //$NON-NLS-1$
 	'box-sizing': 'Disallow use of box-sizing:', //$NON-NLS-0$  //$NON-NLS-1$
@@ -53,5 +56,10 @@ define({
 	'universal-selector': 'Disallow universal selector:', //$NON-NLS-0$  //$NON-NLS-1$
 	'unqualified-attributes': 'Disallow unqualified attribute selectors:', //$NON-NLS-0$  //$NON-NLS-1$
 	'vendor-prefix': 'Require standard property with vendor prefix:', //$NON-NLS-0$  //$NON-NLS-1$
-	'zero-units': 'Disallow units for 0 values:' //$NON-NLS-0$  //$NON-NLS-1$
+	'zero-units': 'Disallow units for 0 values:', //$NON-NLS-0$  //$NON-NLS-1$
+	
+	// CSS Quick Fixes
+	'quickfix-empty-rules': 'Remove the rule.', //$NON-NLS-0$  //$NON-NLS-1$
+	'quickfix-important': 'Remove \'!important\' annotation.', //$NON-NLS-0$  //$NON-NLS-1$
+	'quickfix-zero-units': 'Remove \'px\' qualifier.', //$NON-NLS-0$  //$NON-NLS-1$
 });

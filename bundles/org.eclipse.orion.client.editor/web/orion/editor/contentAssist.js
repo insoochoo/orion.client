@@ -17,11 +17,12 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 	'orion/editor/eventTarget', //$NON-NLS-0$
 	'orion/Deferred', //$NON-NLS-0$
 	'orion/objects', //$NON-NLS-0$
+	'orion/editor/tooltip', //$NON-NLS-0$
 	'orion/editor/util', //$NON-NLS-0$
 	'orion/util', //$NON-NLS-0$
 	'orion/webui/littlelib', //$NON-NLS-0$
 	'orion/metrics' //$NON-NLS-0$
-], function(messages, mKeyBinding, mKeyModes, mEventTarget, Deferred, objects, textUtil, util, lib, mMetrics) {
+], function(messages, mKeyBinding, mKeyModes, mEventTarget, Deferred, objects, mTooltip, textUtil, util, lib, mMetrics) {
 	/**
 	 * @name orion.editor.ContentAssistProvider
 	 * @class Interface defining a provider of content assist proposals.
@@ -215,7 +216,8 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 		isDeactivatingChange: function(/**orion.editor.ModelChangingEvent*/ event, selectionEvent) {
 			var isDeactivating = false;
 			
-			var isPriorToInitialCaretOffset = selectionEvent.newValue.start < this._initialCaretOffset;
+			var selections = Array.isArray(selectionEvent.newValue) ? selectionEvent.newValue : [selectionEvent.newValue];
+			var isPriorToInitialCaretOffset = selections[0].start < this._initialCaretOffset;
 			
 			if (isPriorToInitialCaretOffset || !event) {
 				isDeactivating = true;
@@ -937,9 +939,48 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 			if (this.widget) {
 				this.widget.selectNode(newIndex);
 			}
+			
+			this._showTooltip();
+			
 			return true;
 		},
 		
+		_showTooltip: function() {
+			var tooltip = mTooltip.Tooltip.getTooltip(this.contentAssist.textView);
+			var self = this;
+			tooltip.hide(0);
+			tooltip.show({
+				getTooltipInfo: function() {
+					var bounds = lib.bounds(self.widget.parentNode);
+					var position = "right"; //$NON-NLS-0$
+					if ((bounds.left + bounds.width) >= document.documentElement.clientWidth){
+						position = "left"; //$NON-NLS-0$
+					}
+					var info = {
+						context: {proposal: self.proposals[self.selectedIndex]},
+						offset: 0,
+						hoverArea: bounds,
+						position: position,
+						offsetX: 10,
+						width: 350,
+						height: bounds.height - 10 ,
+						preventTooltipClose : function() {
+							if (self.widget && self.widget.isShowing){
+								return true;
+							}
+							return false;
+						}
+					};
+					return info;
+				}
+			}, false);
+		},
+		
+		_hideTooltip: function() {
+			var tooltip = mTooltip.Tooltip.getTooltip(this.contentAssist.textView);
+			tooltip.hide(0);
+		},
+
 		pageUp: function() {
 			//TODO find out why this doesn't always go to the very top
 			if (this.widget) {
@@ -1114,7 +1155,6 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 					
 					var descriptionNode = document.createTextNode(proposal.description);
 					node.appendChild(descriptionNode);
-					div.setAttribute("title", proposal.name + proposal.description); //$NON-NLS-0$
 				} else {
 					plainString = proposal.description;
 				}
@@ -1125,7 +1165,6 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 			
 			if (plainString) {
 				node = this._createNameNode(plainString);
-				div.setAttribute("title", plainString); //$NON-NLS-0$
 			}
 			
 			node.contentAssistProposalIndex = index;
@@ -1190,6 +1229,14 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 		selectNode: function(nodeIndex) {
 			var node = null;
 			
+			if (this._hideTimeout) {
+				window.clearTimeout(this._hideTimeout);
+				this._hideTimeout = null;
+			}
+			if (this._fadeTimer) {
+				window.clearTimeout(this._fadeTimer);
+				this._fadeTimer = null;
+			}
 			if (this.previousSelectedNode) {
 				this.previousSelectedNode.classList.remove(STYLES.selected);
 				this.previousSelectedNode = null;
@@ -1213,11 +1260,11 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 				
 				var textNode = node.firstChild || node;  
 				var textBounds = lib.bounds(textNode);
-				var parentBounds = lib.bounds(this.parentNode);
+				var parentWidth = this.parentNode.clientWidth ? this.parentNode.clientWidth : lib.bounds(this.parentNode); // Scrollbar can cover text
 				var parentStyle = window.getComputedStyle(this.parentNode);
 				var nodeStyle = window.getComputedStyle(node);
 				var allPadding = parseInt(parentStyle.paddingLeft) + parseInt(parentStyle.paddingRight) + parseInt(nodeStyle.paddingLeft) + parseInt(nodeStyle.paddingRight);
-				if (textBounds.width >= (parentBounds.width - allPadding)) {
+				if (textBounds.width >= (parentWidth - allPadding)) {
 					var parentTop = parseInt(parentStyle.top);
 					
 					// create clone node
@@ -1258,6 +1305,24 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 					};
 					recursiveSetIndex(parentClone);
 					
+					var self = this;
+					this._hideTimeout = window.setTimeout(function() {
+						self._hideTimeout = null;
+						node.classList.add(STYLES.selected);
+						var opacity = 1;
+						self._fadeTimer = window.setInterval(function() {
+							if (!self.previousCloneNode || opacity <= 0.01){
+								self._removeCloneNode();
+								window.clearInterval(self._fadeTimer);
+								self._fadeTimer = null;
+							} else {
+								parentClone.style.opacity = opacity;
+								parentClone.style.filter = 'alpha(opacity=' + opacity * 100 + ")";
+        						opacity -= opacity * 0.1;
+        					}
+						}, 50);
+					}, 1500);
+					
 					node.classList.remove(STYLES.selected);
 					
 					this.previousCloneNode = parentClone;				
@@ -1282,6 +1347,8 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 				this.parentNode.onclick = this.onClick.bind(this);
 				this.isShowing = true;
 				
+				this._contentAssistMode._showTooltip();
+				
 				if (!this.textViewListenerAdded) {
 					this.textView.addEventListener("MouseDown", this.textViewListener.onMouseDown); //$NON-NLS-0$
 					this.textViewListenerAdded = true;
@@ -1295,6 +1362,8 @@ define("orion/editor/contentAssist", [ //$NON-NLS-0$
 			this.parentNode.style.display = "none"; //$NON-NLS-0$
 			this.parentNode.onclick = null;
 			this.isShowing = false;
+			
+			this._contentAssistMode._hideTooltip();
 			
 			if (this.textViewListenerAdded) {
 				this.textView.removeEventListener("MouseDown", this.textViewListener.onMouseDown); //$NON-NLS-0$

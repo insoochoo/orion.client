@@ -10,7 +10,69 @@
  ******************************************************************************/
 
 /*eslint-env browser, amd*/
-define(function() {
+define(["orion/Deferred"
+], function(Deferred) {
+	function _merge2BundleEntries(serviceRegistry, config, perlanguageRefs, perBundleRefs) {
+		var matchedRef;
+		if(perlanguageRefs.length > 0) {
+			var userLocale = config.locale || (typeof navigator !== "undefined" ? (navigator.language || navigator.userLanguage) : null);
+			if(userLocale) {
+				userLocale = userLocale.toLowerCase();
+				var matchFunc = function(reference, completeMatch) {
+					var localeName = reference.getProperty("locale");
+					if(localeName) {
+						localeName = localeName.toLowerCase();
+					}
+					var flag = completeMatch ? (userLocale === localeName) : (userLocale.indexOf(localeName) === 0);
+					if (flag) {
+						return reference;
+					}
+					return null;
+				};
+				var matched = perlanguageRefs.some(function(ref) {
+					matchedRef = matchFunc(ref, true);
+					if (matchedRef) {
+						return true;
+					}
+					return false;
+				});
+				if(!matched) {
+					matched = perlanguageRefs.some(function(ref) {
+						matchedRef = matchFunc(ref);
+						if (matchedRef) {
+							return true;
+						}
+						return false;
+					});								
+				}
+				if(matchedRef) {
+					var serviceEntry = serviceRegistry.getService(matchedRef);
+					if(serviceEntry.getBundleNames) {
+						return serviceEntry.getBundleNames().then(function(bundleNames) {
+							bundleNames.forEach(function(bName) {
+								perBundleRefs.push({serviceRef: matchedRef, bundleName: bName});				
+							});
+							return new Deferred().resolve(perBundleRefs);
+						});
+					}
+				}
+			}
+		}
+		return new Deferred().resolve(perBundleRefs);
+	}
+	function _filterServices(serviceRegistry, config) {
+		var nlsReferences = serviceRegistry.getServiceReferences("orion.i18n.message"); //$NON-NLS-0$
+		var perlanguageRefs = [];
+		var perBundleRefs = [];
+		nlsReferences.forEach(function(reference) {
+			if(reference.getProperty("locale")){
+				perlanguageRefs.push(reference);
+			} else {
+				perBundleRefs.push({serviceRef: reference, bundleName: reference.getProperty("name")});				
+			}
+		});
+		return _merge2BundleEntries(serviceRegistry, config, perlanguageRefs, perBundleRefs);
+	}
 	return {
 		load: function(name, parentRequire, onLoad, config) {
 			config = config || {};
@@ -41,7 +103,7 @@ define(function() {
 				return;
 			}
 			
-			if (parentRequire.specified && !parentRequire.specified("orion/bootstrap")) {
+			if (parentRequire.specified && (!parentRequire.specified("orion/bootstrap") || parentRequire.specified("orion/plugin"))) {
 				onLoad({});
 				return;
 			}
@@ -51,72 +113,73 @@ define(function() {
 				suffix = match[3] || match[2];
 			parentRequire(['orion/bootstrap'], function(bootstrap) { //$NON-NLS-0$
 				bootstrap.startup().then(function(core) {
+					console.log(name);
 					var serviceRegistry = core.serviceRegistry;
-					var nlsReferences = serviceRegistry.getServiceReferences("orion.i18n.message"); //$NON-NLS-0$
-
-					if (!locale) {
-						// create master language entries				
-						var master = {};
-						var masterReference;
-						nlsReferences.forEach(function(reference) {
-							var name = reference.getProperty("name"); //$NON-NLS-0$
-							if ((match = NLS_REG_EXP.exec(name)) && prefix === match[1] && suffix === (match[3] || match[2])) {
-								locale = match[3] ? match[2] : "";
-								if (locale) {
-									// see Bug 381042 - [Globalization] Messages are loaded even if their language is not used
-									var userLocale = config.locale || (typeof navigator !== "undefined" ? (navigator.language || navigator.userLanguage) : null);
-									if (!userLocale || userLocale.toLowerCase().indexOf(locale.toLowerCase()) !== 0) {
-										return;
-									}
-									// end
-									master[locale] = true;
-									if (!parentRequire.specified || !parentRequire.specified(name)) {
-										define(name, ['orion/i18n!' + name], function(bundle) { //$NON-NLS-0$
-											return bundle;
-										});
-									}
-								} else {
-									masterReference = reference;
-								}
-							}
-						});
-						if (!parentRequire.specified || !parentRequire.specified(name)) {
-							if (masterReference) {
-								serviceRegistry.getService(masterReference).getMessageBundle().then(function(bundle) {
-									Object.keys(master).forEach(function(key) {
-										if (typeof bundle[key] === 'undefined') { //$NON-NLS-0$
-											bundle[key] = master[key];
+					_filterServices(serviceRegistry, config).then(function(nlsReferences) {
+						if (!locale) {
+							// create master language entries				
+							var master = {};
+							var masterReference;
+							nlsReferences.forEach(function(reference) {
+								var name =reference.bundleName;
+								if ((match = NLS_REG_EXP.exec(name)) && prefix === match[1] && suffix === (match[3] || match[2])) {
+									locale = match[3] ? match[2] : "";
+									if (locale) {
+										// see Bug 381042 - [Globalization] Messages are loaded even if their language is not used
+										var userLocale = config.locale || (typeof navigator !== "undefined" ? (navigator.language || navigator.userLanguage) : null);
+										if (!userLocale || userLocale.toLowerCase().indexOf(locale.toLowerCase()) !== 0) {
+											return;
 										}
+										// end
+										master[locale.toLowerCase()] = true;
+										if (!parentRequire.specified || !parentRequire.specified(name)) {
+											define(name, ['orion/i18n!' + name], function(bundle) { //$NON-NLS-0$
+												return bundle;
+											});
+										}
+									} else {
+										masterReference = reference.serviceRef;
+									}
+								}
+							});
+							if (!parentRequire.specified || !parentRequire.specified(name)) {
+								if (masterReference) {
+									serviceRegistry.getService(masterReference).getMessageBundle(name).then(function(bundle) {
+										Object.keys(master).forEach(function(key) {
+											if (typeof bundle[key] === 'undefined') { //$NON-NLS-0$
+												bundle[key] = master[key];
+											}
+										});
+										define(name, [], bundle);
+										onLoad(bundle);
+									}, function() {
+										define(name, [], master);
+										onLoad(master);
 									});
-									define(name, [], bundle);
-									onLoad(bundle);
-								}, function() {
+								} else {
 									define(name, [], master);
 									onLoad(master);
-								});
+								}
 							} else {
-								define(name, [], master);
 								onLoad(master);
 							}
 						} else {
-							onLoad(master);
-						}
-					} else {
-						var found = nlsReferences.some(function(reference) {
-							if (name === reference.getProperty("name")) { //$NON-NLS-0$
-								serviceRegistry.getService(reference).getMessageBundle().then(function(bundle) {
-									onLoad(bundle);
-								}, function() {
-									onLoad({});
-								});
-								return true;
+							var found = nlsReferences.some(function(reference) {
+								if (name === reference.bundleName) { //$NON-NLS-0$
+									serviceRegistry.getService(reference.serviceRef).getMessageBundle(name).then(function(bundle) {
+										onLoad(bundle);
+									}, function() {
+										onLoad({});
+									});
+									return true;
+								}
+								return false;
+							});
+							if (!found) {
+								onLoad({});
 							}
-							return false;
-						});
-						if (!found) {
-							onLoad({});
 						}
-					}
+					});//End of _filterServices
 				});
 			});
 		}

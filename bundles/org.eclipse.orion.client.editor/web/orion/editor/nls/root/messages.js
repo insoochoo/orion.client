@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2012 IBM Corporation and others.
+ * Copyright (c) 2010, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials are made 
  * available under the terms of the Eclipse Public License v1.0 
  * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
@@ -10,12 +10,8 @@
  *		Felipe Heidrich (IBM Corporation) - initial API and implementation
  *		Silenio Quarti (IBM Corporation) - initial API and implementation
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
-
 /*eslint-env browser, amd*/
-
-define({
+define({//Default message bundle
 	"multipleAnnotations": "Multiple annotations:", //$NON-NLS-1$ //$NON-NLS-0$
 	"line": "Line: ${0}", //$NON-NLS-1$ //$NON-NLS-0$
 	"breakpoint": "Breakpoint", //$NON-NLS-1$ //$NON-NLS-0$
@@ -28,6 +24,9 @@ define({
 	"currentLine": "Current Line", //$NON-NLS-1$ //$NON-NLS-0$
 	"matchingBracket": "Matching Bracket", //$NON-NLS-1$ //$NON-NLS-0$
 	"currentBracket": "Current Bracket", //$NON-NLS-1$ //$NON-NLS-0$
+	"diffAdded": "Diff Added Lines", //$NON-NLS-1$ //$NON-NLS-0$
+	"diffDeleted": "Diff Deleted Lines", //$NON-NLS-1$ //$NON-NLS-0$
+	"diffModified": "Diff Modified Lines", //$NON-NLS-1$ //$NON-NLS-0$
 	
 	"lineUp": "Line Up", //$NON-NLS-1$ //$NON-NLS-0$
 	"lineDown": "Line Down", //$NON-NLS-1$ //$NON-NLS-0$
@@ -73,6 +72,7 @@ define({
 	"tab": "Insert Tab", //$NON-NLS-1$ //$NON-NLS-0$
 	"enter": "Insert Line Delimiter", //$NON-NLS-1$ //$NON-NLS-0$
 	"enterNoCursor": "Insert Line Delimiter", //$NON-NLS-1$ //$NON-NLS-0$
+	"escape": "Escape", //$NON-NLS-1$ //$NON-NLS-0$
 	"selectAll": "Select All", //$NON-NLS-1$ //$NON-NLS-0$
 	"copy": "Copy", //$NON-NLS-1$ //$NON-NLS-0$
 	"cut": "Cut", //$NON-NLS-1$ //$NON-NLS-0$
@@ -135,7 +135,8 @@ define({
 	"linkedModeExited": "Linked Mode exited", //$NON-NLS-1$ //$NON-NLS-0$
 	"syntaxError": "Syntax Error", //$NON-NLS-1$ //$NON-NLS-0$
 	"contentAssist": "Content Assist", //$NON-NLS-1$ //$NON-NLS-0$
-	"lineColumn": "Line ${0} : Col ${1}", //$NON-NLS-1$ //$NON-NLS-0$
+	"lineColumn": "Line ${0} : Column ${1}", //$NON-NLS-1$ //$NON-NLS-0$
+	"multiSelections": "${0} selection regions", //$NON-NLS-1$ //$NON-NLS-0$
 	
 	//vi
 	"vi": "vi", //$NON-NLS-1$ //$NON-NLS-0$

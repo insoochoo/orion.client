@@ -1,16 +1,14 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2012, 2014 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License v1.0
- * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution
- * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html).
- *
+ * Copyright (c) 2012 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials are made 
+ * available under the terms of the Eclipse Public License v1.0 
+ * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
+ * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
+ * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
+define({//Default message bundle
 	"Plugin Description": "Plugin Description",
 	"Create": "Create",
 	"Loading...": "Loading...",
@@ -20,6 +18,8 @@ define({
 	"User Profile": "User Profile",
 	"Git": "Git",
 	"Git Settings": "Git Settings",
+	"Theme":"Editor Styles",
+	"Theme Settings": "Theme Settings",
 	"General": "General",
 	"Navigation": "Navigation",
 	"Links": "Links:",
@@ -52,7 +52,7 @@ define({
 	"Keyword Types": "Keyword Types",
 	"darkred": "darkred",
 	"Categories": "Categories",
-	"Username": "Username:",
+	"User Name": "User Name:",
 	"Full Name": "Full Name:",
 	"Email Address": "Email Address:",
 	"Email Confirmed": "Email Confirmed:",
@@ -135,9 +135,9 @@ define({
 	"general": "General",
 	"validation": "Validation",
 	"DeletedGitMsg": "Deleted git credentials for ${0}",
-	"Editor": "Editor",
-	"editorSettings": "Settings",
-	"EditorThemes": "Themes",
+	"Editor": "Editor Settings",
+	"editorSettings": "Editor Settings",
+	"EditorThemes": "Editor Styles",
 	"Import": "Import",
 	"Import a theme": "Import a theme",
 	"Export": "Export",
@@ -192,7 +192,6 @@ define({
 	"contentAssistAutoTrigger": "Show Content Assist automatically:",
 	"Editor preferences updated": "Editor preferences updated",
 	"Editor defaults restored": "Editor defaults restored",
-	"Theme": "Theme",
 	"Font Size": "Font Size:",
 	"New Theme Name:": "New Theme Name:",
 	"Font Size:": "Font Size:",
@@ -262,5 +261,11 @@ define({
     'RedThemeName': 'Red',  //$NON-NLS-0$  //$NON-NLS-1$
     "SettingUpdateSuccess": "${0} settings successfully updated.",
     "buttonSave": "Save",
-    "buttonRevert": " Revert"
+    "buttonRevert": " Revert",
+    "ConfirmRestore": "Restore these settings to their default values?",
+    "Theme : " : "Theme : ",
+    "Display Language : " : "Display Language : ",
+    "cannotDeleteMsg" : " is a default theme that cannot be deleted",
+    "confirmDeleteMsg" : "Are you sure you want to delete this theme?",
+    "cannotModifyMsg" : " is a default theme that cannot be modified. Please use another name."
 });

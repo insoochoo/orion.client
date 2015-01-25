@@ -15,19 +15,33 @@ define([
 	'orion/Deferred',
 	"orion/editor/textStyler", 
 	"orion/editor/stylers/application_javascript/syntax",
+	"orion/editor/stylers/application_x-jsp/syntax",
+	"orion/editor/stylers/application_xquery/syntax",
 	"orion/editor/stylers/text_css/syntax",
 	"orion/editor/stylers/text_html/syntax",
 	"orion/editor/stylers/application_json/syntax",
+	"orion/editor/stylers/text_x-arduino/syntax",
+	"orion/editor/stylers/text_x-csrc/syntax",
+	"orion/editor/stylers/text_x-csharp/syntax",
+	"orion/editor/stylers/text_x-cshtml/syntax",
+	"orion/editor/stylers/text_x-c__src/syntax",
+	"orion/editor/stylers/text_x-dockerfile/syntax",
+	"orion/editor/stylers/text_x-erlang/syntax",
+	"orion/editor/stylers/text_x-haml/syntax",
+	"orion/editor/stylers/text_x-java-source/syntax",
+	"orion/editor/stylers/text_x-lua/syntax",
 	"orion/editor/stylers/text_x-php/syntax",
 	"orion/editor/stylers/text_x-python/syntax",
 	"orion/editor/stylers/text_x-ruby/syntax",
 	"orion/editor/stylers/text_x-go/syntax",
 	"orion/editor/stylers/text_x-objective-c/syntax",
 	"orion/editor/stylers/text_x-swift/syntax",
+	"orion/editor/stylers/text_x-vb/syntax",
+	"orion/editor/stylers/text_x-vbhtml/syntax",
 	'orion/editor/stylers/application_x-ejs/syntax',
 	'orion/editor/stylers/application_xml/syntax',
 	'orion/editor/stylers/text_x-yaml/syntax',
-], function(Deferred, mStyler, mJS, mCss, mHtml, mJson, mPhp, mPython, mRuby, mGo, mObjectiveC, mSwift, mEJS, mXml, mYaml) {
+], function(Deferred, mStyler, mJS, mJSP, mXQuery, mCss, mHtml, mJson, mArduino, mC, mCS, mCSHTML, mCpp, mDockerfile, mErlang, mHaml, mJava, mLua, mPhp, mPython, mRuby, mGo, mObjectiveC, mSwift, mVB, mVBHTML, mEJS, mXml, mYaml) {
 	var ContentTypes = [{	id: "text/plain",
 			name: "Text",
 			extension: ["txt"],
@@ -73,6 +87,11 @@ define([
 			"extends": "text/plain",
 			name: "Java",
 			extension: ["java"]
+		},
+		{	id: "application/x-jsp",
+			"extends": "text/plain",
+			name: "Java Server Page",
+			extension: ["jsp"]
 		},
 		{	id: "text/x-python",
 			"extends": "text/plain",
@@ -141,6 +160,66 @@ define([
 			name: "ZIP",
 			extension: ["war", "jar", "zip", "rar"]
 		},
+		{	id: "text/x-arduino",
+			"extends": "text/plain",
+			name: "Arduino",
+			extension: ["ino", "pde"]
+		},
+		{	id: "text/x-csrc",
+			"extends": "text/plain",
+			name: "C",
+			extension: ["c", "h"]
+		},
+		{	id: "text/x-csharp",
+			"extends": "text/plain",
+			name: "C#",
+			extension: ["cs"]
+		},
+		{	id: "text/x-cshtml",
+			"extends": "text/plain",
+			name: "cshtml",
+			extension: ["cshtml"]
+		},
+		{	id: "text/x-c++src",
+			"extends": "text/plain",
+			name: "C++",
+			extension: ["cpp", "hpp"]
+		},
+		{	id: "text/x-dockerfile",
+			"extends": "text/plain",
+			name: "dockerfile",
+			filename: ["dockerfile"]
+		},
+		{	id: "text/x-erlang",
+			"extends": "text/plain",
+			name: "Erlang",
+			extension: ["erl", "hrl"]
+		},
+		{	id: "text/x-haml",
+			"extends": "text/plain",
+			name: "Haml",
+			extension: ["haml"]
+		},
+		{	id: "text/x-lua",
+			"extends": "text/plain",
+			name: "Lua",
+			extension: ["lua"]
+		},
+		{	id: "application/xquery",
+			"extends": "text/plain",
+			name: "XQuery",
+			extension:  ["xq", "xqy", "xquery"]
+		},
+		{	id: "text/x-vb",
+			"extends": "text/plain",
+			name: "VB.NET",
+			extension: ["vb"]
+		},
+		{	id: "text/x-vbhtml",
+			"extends": "text/plain",
+			name: "vbhtml",
+			extension: ["vbhtml"]
+		},
 		// Image types
 		{	id: "image/gif",
 			name: "GIF",
@@ -171,7 +250,8 @@ define([
 			name: "SVG",
 			extension: ["svg"],
 			imageClass: "file-sprite-image modelDecorationSprite"
-	}];
+		}
+	];
 	
 	function SyntaxHighlighter() {
 		this.styler = null;
@@ -185,9 +265,14 @@ define([
 				}
 				this.styler = null;
 			}
-			return this.highlight(fileContentType, textView, annotationModel);
+			return this._highlight(fileContentType, textView, annotationModel);
 		},
-		highlight: function(fileContentType, textView, annotationModel) {
+		highlight: function(fileName, contentType, editor) {
+			var textView = editor.getTextView();
+			var annotationModel = editor.getAnnotationModel();
+			return this._highlight(contentType, textView, annotationModel);
+		},
+		_highlight: function(fileContentType, textView, annotationModel) {
 			if (this.styler) {
 				this.styler.destroy();
 				this.styler = null;
@@ -208,7 +293,10 @@ define([
 						stylerAdapter = new mStyler.createPatternBasedAdapter(mHtml.grammars, "orion.html", fileContentType.id); //$NON-NLS-0$
 						break;
 					case "text/x-java-source": //$NON-NLS-0$
-						stylerAdapter = new mStyler.createPatternBasedAdapter(mJS.grammars, "orion.java", fileContentType.id); //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mJava.grammars, "orion.java", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "application/x-jsp": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mJSP.grammars, "orion.jsp", fileContentType.id); //$NON-NLS-0$
 						break;
 					case "application/json": //$NON-NLS-0$
 						stylerAdapter = new mStyler.createPatternBasedAdapter(mJson.grammars, "orion.json", fileContentType.id); //$NON-NLS-0$
@@ -238,9 +326,45 @@ define([
 					case "text/x-yaml": //$NON-NLS-0$
 						stylerAdapter = new mStyler.createPatternBasedAdapter(mYaml.grammars, "orion.yaml", fileContentType.id); //$NON-NLS-0$
 						break;
+					case "text/x-arduino": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mArduino.grammars, "orion.arduino", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-csrc": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mC.grammars, "orion.c", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-csharp": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mCS.grammars, "orion.csharp", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-cshtml": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mCSHTML.grammars, "orion.cshtml", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-c++src": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mCpp.grammars, "orion.cpp", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-dockerfile": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mDockerfile.grammars, "orion.dockerfile", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-erlang": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mErlang.grammars, "orion.erlang", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-haml": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mHaml.grammars, "orion.haml", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-lua": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mLua.grammars, "orion.lua", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "application/xquery": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mXQuery.grammars, "orion.xquery", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-vb": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mVB.grammars, "orion.vb", fileContentType.id); //$NON-NLS-0$
+						break;
+					case "text/x-vbhtml": //$NON-NLS-0$
+						stylerAdapter = new mStyler.createPatternBasedAdapter(mVBHTML.grammars, "orion.vbhtml", fileContentType.id); //$NON-NLS-0$
+						break;
 				}
 			}
-			if(stylerAdapter) {
+			if (stylerAdapter) {
 				this.styler = new mStyler.TextStyler(textView, annotationModel, stylerAdapter);
 			}
 			return new Deferred().resolve();

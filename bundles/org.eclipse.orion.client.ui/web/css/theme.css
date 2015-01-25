@@ -213,6 +213,7 @@ a.breadcrumb.currentLocation {
  	padding-right: 5px;
 	/* border-bottom: 1px solid #ebebeb; */
 	/* padding-left:50px; */
+	white-space: nowrap;
 }
 
 /* Filesystem switcher toolbar */
@@ -672,6 +673,11 @@ a.breadcrumb.currentLocation {
 }
 
 .dropdownMenuItem .dropdownCommandName {
+	-webkit-align-items: center;		/* Safari */
+	align-items: center;
+	display: inline-flex;
+	display: -webkit-inline-flex;		/* Safari */
+	
 	flex-grow: 1;
 	-webkit-flex-grow: 1;		/* Safari */
 	text-decoration: inherit; /* inherit hover decoration when inside an <a> */
@@ -701,7 +707,7 @@ a.breadcrumb.currentLocation {
 /* tooltips */
 
 .tooltipContainer {
-	visibility: hidden;
+	display: none;
 	z-index: 200;
 	background: transparent;
 	position: absolute;
@@ -822,7 +828,7 @@ a.breadcrumb.currentLocation {
 }
 
 .tooltipShowing {
-	visibility: visible;
+	display: block;
 }
 
 /* dialogs */

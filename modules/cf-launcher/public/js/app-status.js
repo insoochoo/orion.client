@@ -1,6 +1,6 @@
 /*eslint-env browser */
 /*eslint no-unused-params:0 */
-/*global $ */
+/*global $ console*/
 
 // @returns A Promise resolving with the parsed application
 function appxhr(method, url, appData) {
@@ -40,6 +40,16 @@ function clone(app) {
 function log() {
 	if (typeof console !== "undefined")
 		console.log.apply(console, arguments);
+}
+
+/**
+ * @returns {Element} The root element of the instantiated template
+ */
+function instantiateTemplate(templateId, model) {
+	var template = $("#" + templateId);
+	var root = template[0].cloneNode(true /*deep*/); // Element
+	replaceSubtree(root, model); // replace ${f} patterns with values from the model
+	return root;
 }
 
 function replaceSubtree(node, messages) {
@@ -105,12 +115,8 @@ var view = {
 		var panel = $("#app-status-panel");
 		var app = control.app,
 		    isDebugging = (app.state === "debug" || app.state === "debugbreak"),
-		    template = isDebugging ? $("#template-debug") : $("#template-stop"),
-		    status = template[0].cloneNode(true /*deep*/); // Element
-		replaceSubtree(status, {
-			name: app.name
-		});
-		panel.empty().append(status);
+		    template = isDebugging ? "template-debug" : "template-stop";
+		panel.empty().append(instantiateTemplate(template, app));
 
 		var tail = $("#logtail");
 		var oldtail = tail.text(), newtail = app.tail.join("\n");
@@ -122,7 +128,7 @@ var view = {
 		$("#app-status-panel").text(err && err.toString());
 	},
 	renderProgress: function(msg) {
-		$("#app-status-panel").text("\u23F0 " + msg);
+		$("#app-status-panel").empty().append(instantiateTemplate("template-progress", { msg: msg }));
 		$("#log-panel")[0].classList.add("hide");
 	},
 	bind: function() {

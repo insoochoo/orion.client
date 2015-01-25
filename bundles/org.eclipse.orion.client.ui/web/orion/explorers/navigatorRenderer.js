@@ -25,8 +25,9 @@ define([
 	var max_more_info_column_length = 60;
 	/* Internal */
 	function addImageToLink(contentType, link, location, replace) {
+		var image;
 		if (contentType) {
-			var image, imageClass = contentType.imageClass, imageURL = contentType.image;
+			var imageClass = contentType.imageClass, imageURL = contentType.image;
 			if (imageClass) {
 				image = document.createElement("span"); //$NON-NLS-0$
 				image.className += imageClass; // may be several classes in here
@@ -41,6 +42,7 @@ define([
 				link.replaceChild(image, replace);
 			}
 		}
+		return image ? image : replace;
 	}
 	
 	var uriTemplate = new URITemplate("#{,resource,params*}"); //$NON-NLS-0$
@@ -121,12 +123,13 @@ define([
 				href = openWithCommand.hrefCallback({items: item});
 			}
 			Deferred.when(contentTypeService.getFileContentType(item), function(contentType) {
+				var iconElement;
 				if(imageHolderDom) {
-					addImageToLink(contentType, imageHolderDom, item.Location, image);
+					iconElement = addImageToLink(contentType, imageHolderDom, item.Location, image);
 				}
 				link.href = href;
 				if(renderer && typeof renderer.updateFileNode === 'function') { //$NON-NLS-0$
-					renderer.updateFileNode(item, link, mContentTypes.isImage(contentType));
+					renderer.updateFileNode(item, link, mContentTypes.isImage(contentType), iconElement);
 				}
 			});
 		}

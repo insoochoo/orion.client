@@ -7,10 +7,8 @@
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
+define({//Default message bundle
 	"ProblemsFilter": "Filter on descriptions, file names and folders(* = any string, ? = any character)", //$NON-NLS-1$ //$NON-NLS-0$
 	"computeCancelled": "Problems computation cancelled by user", //$NON-NLS-1$ //$NON-NLS-0$
 	"computingProblems": "Computing problems...", //$NON-NLS-1$ //$NON-NLS-0$

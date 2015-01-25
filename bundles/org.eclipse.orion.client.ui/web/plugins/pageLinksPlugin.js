@@ -13,8 +13,11 @@
 define([
 	'orion/PageLinks',
 	'orion/plugin',
-	'orion/URITemplate'
-], function(PageLinks, PluginProvider, URITemplate) {
+	'orion/URITemplate',
+	'i18n!orion/nls/messages',
+	'i18n!orion/widgets/nls/messages',
+	'orion/plugin'
+], function(PageLinks, PluginProvider, URITemplate, messages, widgetMessages) {
 	var serviceImpl = { /* All data is in properties */ };
 
 	var headers = {
@@ -28,14 +31,14 @@ define([
 	// Categories for primary nav and related links
 	provider.registerService("orion.page.link.category", null, {
 		id: "edit",
-		nameKey: "Editor",
+		name: messages["Editor"],
 		nls: "orion/nls/messages",
 		imageClass: "core-sprite-edit",
 		order: 10
 	});
 	provider.registerService("orion.page.link.category", null, {
 		id: "shell",
-		nameKey: "Shell",
+		name: messages["Shell"],
 		nls: "orion/nls/messages",
 		imageClass: "core-sprite-shell",
 		order: 40
@@ -43,7 +46,7 @@ define([
 	
 	provider.registerService("orion.page.link.category", null, {
 		id: "settings",
-		nameKey: "Settings",
+		name: widgetMessages["Settings"],
 		nls: "orion/widgets/nls/messages",
 		imageClass: "core-sprite-gear",
 		order: 60
@@ -51,7 +54,7 @@ define([
 
 	// Primary navigation links
 	provider.registerService("orion.page.link", null, {
-		nameKey: "EditorLinkWorkspace",
+		name: messages["EditorLinkWorkspace"],
 		nls: "orion/nls/messages",
 		tooltip: "Edit code",
 		category: "edit",
@@ -59,7 +62,7 @@ define([
 		uriTemplate: "{+OrionHome}/edit/edit.html"
 	});
 	provider.registerService("orion.page.link", serviceImpl, {
-		nameKey: "ShellLinkWorkspace",
+		name: messages["ShellLinkWorkspace"],
 		id: "orion.shell",
 		nls: "orion/nls/messages",
 		category: "shell",
@@ -68,7 +71,7 @@ define([
 	});
 
 	provider.registerService("orion.page.link", null, {
-		nameKey: "Settings",
+		name: widgetMessages["Settings"],
 		id: "orion.settings",
 		nls: "orion/widgets/nls/messages",
 		category: "settings",
@@ -79,7 +82,7 @@ define([
 	// Links to an Editor view of current folder. This is only useful from non-Editor pages (eg Shell)
 	provider.registerService("orion.page.link.related", null, {
 		id: "orion.editFromMetadata",
-		nameKey: "EditorRelatedLink",
+		name: messages["EditorRelatedLink"],
 		nls: "orion/nls/messages",
 		tooltip: "Open Editor page",
 		category: "edit",
@@ -97,7 +100,7 @@ define([
 	// Links to an Editor view of the parent folder (Enclosing Folder)
 	provider.registerService("orion.page.link.related", null, {
 		id: "orion.editParent",
-		nameKey: "EditorRelatedLinkParent",
+		name: messages["EditorRelatedLinkParent"],
 		nls: "orion/nls/messages",
 		category: "edit",
 		order: 3,
@@ -112,7 +115,7 @@ define([
 	// Links to an Editor view of the topmost parent folder (Project Root)
 	provider.registerService("orion.page.link.related", null, {
 		id: "orion.editProjectRoot",
-		nameKey: "EditorRelatedLinkProj",
+		name: messages["EditorRelatedLinkProj"],
 		nls: "orion/nls/messages",
 		category: "edit",
 		order: 5,
@@ -128,7 +131,7 @@ define([
 	// (Encourages users to stay within their current project rather than ascend to workspace)
 //	provider.registerService("orion.page.link.related", null, {
 //		id: "orion.editProjectRootNoOp",
-//		nameKey: "EditorRelatedLinkProj",
+//		name: messages["EditorRelatedLinkProj"],
 //		nls: "orion/nls/messages",
 //		category: "edit",
 //		order: 5,
@@ -142,7 +145,7 @@ define([
 //	// Removed, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=427617
 //	provider.registerService("orion.page.link.related", null, {
 //		id: "orion.editFromMetadataAlways",
-//		nameKey: "EditorLinkWorkspace",
+//		name: messages["EditorLinkWorkspace"],
 //		nls: "orion/nls/messages",
 //		tooltip: "Open Editor page",
 //		category: "edit",
@@ -155,7 +158,7 @@ define([
 
 	provider.registerService("orion.page.link.user", null, {
 		id: "orion.help",
-		nameKey: "Help",
+		name: widgetMessages["Help"],
 		nls: "orion/widgets/nls/messages",
 		uriTemplate: "{+OrionHome}/help/help.html",
 		category: "user.0"
@@ -163,7 +166,7 @@ define([
 	
 	provider.registerService("orion.page.link.user", null, {
 		id: "orion.report.bug",
-		nameKey: "Report a Bug",
+		name: widgetMessages["Report a Bug"],
 		nls: "orion/widgets/nls/messages",
 		uriTemplate: "https://bugs.eclipse.org/bugs/enter_bug.cgi?product=Orion&component=Client&version=5.0",
 		category: "user.0"
@@ -176,17 +179,17 @@ define([
 
 	provider.registerService("orion.core.content", null, {
 		id: "orion.content.html5",
-		nameKey: "Sample HTML5 Site",
+		name: messages["Sample HTML5 Site"],
 		nls: "orion/nls/messages",
-		descriptionKey: "Generate an HTML5 'Hello World' website, including JavaScript, HTML, and CSS files.",
+		description: messages["Generate an HTML5 'Hello World' website, including JavaScript, HTML, and CSS files."],
 		contentURITemplate: htmlHelloWorld.href
 	});
 
 	provider.registerService("orion.core.content", null, {
 		id: "orion.content.plugin",
-		nameKey: "Sample Orion Plugin",
+		name: messages["Sample Orion Plugin"],
 		nls: "orion/nls/messages",
-		descriptionKey: "Generate a sample plugin for integrating with Orion.",
+		description: messages["Generate a sample plugin for integrating with Orion."],
 		contentURITemplate: pluginHelloWorld.href
 	});
 

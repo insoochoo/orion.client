@@ -31,12 +31,13 @@ define([
 	'orion/widgets/settings/UserSettings',
 	'orion/widgets/settings/GitSettings',
 	'orion/widgets/settings/EditorSettings',
+	'orion/widgets/settings/ThemeSettings',
 	'orion/editorPreferences',
 	'orion/metrics'
 ], function(messages, Deferred, mGlobalCommands, PageUtil, lib, objects, URITemplate, 
 		ThemeBuilder, SettingsList, mThemePreferences, editorThemeData, containerThemeData, SplitSelectionLayout, PluginList, UserSettings,
 		GitSettings,
-		EditorSettings, mEditorPreferences,
+		EditorSettings, ThemeSettings, mEditorPreferences,
 		mMetrics) {
 
 	/**
@@ -57,14 +58,10 @@ define([
 		/**
 		 * @returns {orion.Promise}
 		 */
-		loadTranslatedPluginSettings: function() {
-			return this.settingsRegistry.loadI18n();
-		},
-
 		show: function() {
 			var _self = this;
 
-			Deferred.all([this.preferences.getPreferences('/settingsContainer'), this.loadTranslatedPluginSettings()]).then(function(results){
+			Deferred.all([this.preferences.getPreferences('/settingsContainer')]).then(function(results){
 				var prefs = results[0];
 				var categories = prefs.get( 'categories' ) || {};
 				if (categories.showUserSettings === undefined || categories.showUserSettings) {
@@ -80,6 +77,14 @@ define([
 						id: "gitSettings", //$NON-NLS-0$
 						textContent: messages.Git,
 						show: _self.showGitSettings
+					});
+				}
+				
+				if (categories.showThemeSettings === undefined || categories.showThemeSettings){
+					_self.settingsCategories.push({
+						id: "themeSettings", //$NON-NLS-0$
+						textContent: messages.Theme,
+						show: _self.showThemeSettings
 					});
 				}
 				
@@ -128,12 +133,8 @@ define([
 	
 				mGlobalCommands.setPageTarget({task: messages['Settings'], serviceRegistry: _self.registry, commandService: _self.commandService});
 				
-				if (window.orionPageLoadStart) {
-					var interval = new Date().getTime() - window.orionPageLoadStart;
-					mMetrics.logTiming("page", "interactive", interval, window.location.pathname); //$NON-NLS-1$ //$NON-NLS-0$
-					mMetrics.logTiming("page", "complete", interval, window.location.pathname); //$NON-NLS-1$ //$NON-NLS-0$
-					window.orionPageLoadStart = undefined;
-				}
+				mMetrics.logPageLoadTiming("interactive", window.location.pathname); //$NON-NLS-0$
+				mMetrics.logPageLoadTiming("complete", window.location.pathname); //$NON-NLS-0$
 			});
 		},
 		
@@ -184,18 +185,12 @@ define([
 			var editorTheme = new editorThemeData.ThemeData();
 			var themePreferences = new mThemePreferences.ThemePreferences(this.preferences, editorTheme);
 			
-			var editorThemeWidget = new ThemeBuilder({ commandService: this.commandService, preferences: themePreferences, themeData: editorTheme, toolbarId: 'editorThemeSettingsToolActionsArea', serviceRegistry: this.registry}); //$NON-NLS-0$
-				
-			var command = { name:messages.Import, tip:messages['Import a theme'], id:0, callback: editorTheme.importTheme.bind(editorTheme) };
-			editorThemeWidget.addAdditionalCommand( command );
-
 			var editorPreferences = new mEditorPreferences.EditorPreferences (this.preferences);
 			
 			this.editorSettings = new EditorSettings({
 				registry: this.registry,
 				preferences: editorPreferences,
 				themePreferences: themePreferences,
-				editorThemeWidget: editorThemeWidget,
 				statusService: this.preferencesStatusService,
 				dialogService: this.preferenceDialogService,
 				commandService: this.commandService,
@@ -261,6 +256,40 @@ define([
 			this.gitWidget.show();
 		},
 		
+		showThemeSettings: function(id){ // INSOO
+			this.selectCategory(id);
+
+			lib.empty(this.table);
+		
+			this.updateToolbar(id);
+
+			var themeSettingsNode = document.createElement('div'); //$NON-NLS-0$
+			this.table.appendChild(themeSettingsNode);
+
+			var editorTheme = new editorThemeData.ThemeData();
+			var themePreferences = new mThemePreferences.ThemePreferences(this.preferences, editorTheme);
+			
+			var editorThemeWidget = new ThemeBuilder({ commandService: this.commandService, preferences: themePreferences, themeData: editorTheme, toolbarId: 'editorThemeSettingsToolActionsArea', serviceRegistry: this.registry}); //$NON-NLS-0$
+				
+			var command = { name:messages.Import, tip:messages['Import a theme'], id:0, callback: editorTheme.importTheme.bind(editorTheme) };
+			editorThemeWidget.addAdditionalCommand( command );
+
+			var editorPreferences = new mEditorPreferences.EditorPreferences (this.preferences);
+			
+			this.themeSettings = new ThemeSettings({
+				registry: this.registry,
+				preferences: editorPreferences,
+				themePreferences: themePreferences,
+				editorThemeWidget: editorThemeWidget,
+				statusService: this.preferencesStatusService,
+				dialogService: this.preferenceDialogService,
+				commandService: this.commandService,
+				userClient: this.userClient
+			}, themeSettingsNode);
+			
+			this.themeSettings.show();
+		},
+		
 		initPlugins: function(id){
 			lib.empty(this.table);
 
@@ -304,6 +333,7 @@ define([
 			this.pluginSettingsWidget = new SettingsList({
 				parent: this.table,
 				serviceRegistry: this.registry,
+				commandRegistry: this.commandService,
 				settings: settingsInCategory,
 				title: title
 			});
@@ -361,7 +391,7 @@ define([
 					return true;
 				}
 			});
-
+			
 			if (!isDefaultCategory) {
 				this.selectCategory(id);
 			}
@@ -384,13 +414,9 @@ define([
 		},
 
 		drawUserInterface: function(settings) {
-
 			superPrototype.drawUserInterface.apply(this, arguments);
-
 			this.addCategories();
-
 			this.processHash();
-
 		},
 		
 		handleError: function( error ){

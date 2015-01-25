@@ -12,8 +12,9 @@
 /*eslint-env amd*/
 define([
 'estraverse',
-'orion/objects'
-], function(Estraverse, Objects) {
+'orion/objects',
+'eslint/conf/environments'
+], function(Estraverse, Objects, ESlintEnv) {
 
 	/**
 	 * @name javascript.Visitor
@@ -86,6 +87,9 @@ define([
 				case Estraverse.Syntax.AssignmentExpression:
 					this.checkId(node.left);
 					this.checkId(node.right);
+					break;
+				case Estraverse.Syntax.ExpressionStatement:
+					this.checkId(node.expression);
 					break;
 				case Estraverse.Syntax.ArrayExpression: 
 					if (node.elements) {
@@ -1007,8 +1011,8 @@ define([
 					if (parent.object && parent.object.type === Estraverse.Syntax.ThisExpression){
 						// Usage of this within an object
 						this.visitor.objectPropCheck = true;
-					} else if (parent.property && context.start >= parent.property.range[0] && context.end <= parent.property.range[1]){
-					 	// Selecting the property key of a member expression
+					} else if (!parent.computed && parent.property && context.start >= parent.property.range[0] && context.end <= parent.property.range[1]){
+					 	// Selecting the property key of a member expression that is not computed (foo.a vs foo[a])
 						this.visitor.objectPropCheck = true;
 					}
 				} else if (parent && parent.type === Estraverse.Syntax.FunctionExpression && context.token.parents.length > 1 && context.token.parents[context.token.parents.length-2].type === Estraverse.Syntax.Property){
@@ -1025,7 +1029,81 @@ define([
 				
 			this.visitor.context = context;
 			return this.visitor;			
-		}
+		},
+		
+		/**
+		 * @description Asks the ESLint environment description if it knows about the given member name and if so
+		 * returns the index name it was found in
+		 * @function
+		 * @param {String} name The name of the member to look up
+		 * @returns {String} The name of the ESLint environment it was found in or <code>null</code>
+		 * @since 8.0
+		 */
+		findESLintEnvForMember: function findESLintEnvForMember(name) {
+		    var keys = Object.keys(ESlintEnv);
+		    if(keys) {
+		        var len = keys.length;
+		        for(var i = 0; i < len; i++) {
+		            var env = ESlintEnv[keys[i]];
+		            if(typeof env[name] !== 'undefined') {
+		                return keys[i];
+		            }
+		            var globals = env['globals'];
+		            if(globals && (typeof globals[name] !== 'undefined')) {
+		                return keys[i];
+		            }
+		        }
+		    }
+		    return null;
+		},
+		
+		/**
+		 * @description Find the directive comment with the given name in the given AST
+		 * @function
+		 * @param {Object} ast The AST to search
+		 * @param {String} name The name of the fdirective to look for. e.g. eslint-env
+		 * @returns {Object} The AST comment node or <code>null</code>
+		 * @since 8.0
+		 */
+		findDirective: function findDirective(ast, name) {
+		    if(ast && (typeof name !== 'undefined')) {
+		        var len = ast.comments.length;
+		        for(var i = 0; i < len; i++) {
+		            var match = /^\s*(eslint-\w+|eslint|globals?)(\s|$)/.exec(ast.comments[i].value);
+		            if(match != null && typeof match !== 'undefined' && match[1] === name) {
+		                return ast.comments[i];
+		            }
+		        }
+		    }
+		    return null;
+		},
+		
+		/**
+		 * @description Tries to find the comment for the given node. If more than one is found in the array
+		 * the last entry is considered 'attached' to the node
+		 * @function
+		 * @private
+		 * @param {Object} node The AST node
+		 * @returns {Object} The comment object from the AST or null
+		 * @since 8.0
+		 */
+		findCommentForNode: function findCommentForNode(node) {
+		    var comments = node.leadingComments;
+		    var comment = null;
+	        if(comments && comments.length > 0) {
+	            //simple case: the node has an attaced comment, take the last comment in the leading array
+	            comment = comments[comments.length-1];
+	            if(comment.type === 'Block') {
+    	            comment.node = node;
+    	            return comment;
+	            }
+	        }
+            //we still want to show a hover for something with no doc
+            comment = Object.create(null);
+            comment.node = node;
+            comment.value = '';
+	        return comment;
+		},
 		
 	};
 

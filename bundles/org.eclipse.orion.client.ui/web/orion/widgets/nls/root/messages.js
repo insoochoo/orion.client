@@ -7,10 +7,8 @@
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
+define({//Default message bundle
 	"Choose a Folder": "Choose a Folder",
 	"OK": "OK",
 	"Profile": "Profile",
@@ -70,5 +68,17 @@ define({
 	"Related Links": "Related Links",
 	"Yes": "Yes",
 	"No": "No",
-	"DeleteSearchTrmMsg": "Click or use delete key to delete the search term"
+	"DeleteSearchTrmMsg": "Click or use delete key to delete the search term",
+	"Application": "Application",
+	"selectLaunchConfig": "Create new launch configuration",
+	"createNew": "Create New",
+	"Running": "Running",
+	"checkingStateMessage": "Checking status of ${0}",
+	"checkingStateShortMessage": "checking status",
+	"Status": "Status",
+	"appInfoStopped": "stopped",
+	"appInfoRunning": "running",
+	"appInfoUnknown": "unknown",
+	"displayNameSeparator": " on ",
+	"openAppTooltip": "Open URL"
 });

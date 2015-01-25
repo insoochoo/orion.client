@@ -330,7 +330,7 @@ define([
 						// The parameter collector cannot collect.  We will do a default implementation using a popup.
 						if (!collecting) {
 							var tooltip = new mTooltip.Tooltip({
-								node: commandInvocation.domNode,
+								node: commandInvocation.domNode || commandInvocation.domParent,
 								afterHiding: function() {
 									this.destroy();
 								},
@@ -808,7 +808,7 @@ define([
 					
 					var childContributions = contribution.children;
 					var created;
-					if (renderType === "tool" || renderType === "button") { //$NON-NLS-1$ //$NON-NLS-0$
+					if (renderType === "tool" || renderType === "button") { //$NON-NLS-0$ //$NON-NLS-1$
 						if (contribution.title) {
 							// We need a named menu button.  We used to first render into the menu and only 
 							// add a menu button in the dom when we knew items were actually rendered.
@@ -912,7 +912,9 @@ define([
 							// synchronously render the children since order matters
 							self._render(childContributions, parent, items, handler, renderType, userData, domNodeWrapperList); 
 							// Add a trailing separator if children rendered.
-							self._generateMenuSeparator(parent);
+							if (parent.childNodes.length > 0) {
+								self._generateMenuSeparator(parent);
+							}
 						}
 					}
 				} else {
@@ -994,6 +996,11 @@ define([
 									bindingString = UIUtil.getUserKeyString(keyBinding.keyBinding);
 								}
 								element = Commands.createCommandMenuItem(parent, command, invocation, null, onClick, bindingString);
+							} else if (renderType === "quickfix") { //$NON-NLS-0$
+								id = renderType + command.id + index; //$NON-NLS-0$ // using the index ensures unique ids within the DOM when a command repeats for each item
+								var commandDiv = document.createElement("div"); //$NON-NLS-0$
+								parent.appendChild(commandDiv);
+								element = Commands.createCommandItem(commandDiv, command, invocation, id, null, renderType === "button", onClick); //$NON-NLS-0$
 							} else {
 								id = renderType + command.id + index;  //$NON-NLS-0$ // using the index ensures unique ids within the DOM when a command repeats for each item
 								element = Commands.createCommandItem(parent, command, invocation, id, null, renderType === "tool", onClick); //$NON-NLS-0$

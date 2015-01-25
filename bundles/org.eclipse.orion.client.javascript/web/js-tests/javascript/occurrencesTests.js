@@ -3137,5 +3137,148 @@ define([
 			});
 		});
 		
+		/**
+		 * Tests selections inside a computed property identifer are not treated as member expressions
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452161
+		 */
+		it('test_computedObjectProperty1', function() {
+			editorContext.text = "var x = {a: {}, b: function(a) {var c = arr[a];} };";
+			return occurrences.computeOccurrences(editorContext, setContext(9,10)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:9, end:10}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests selections inside a computed property identifer are not treated as member expressions
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452161
+		 */
+		it('test_computedObjectProperty2', function() {
+			editorContext.text = "var x = {a: {}, b: function(a) {var c = arr[a];} };";
+			return occurrences.computeOccurrences(editorContext, setContext(28,29)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:28, end:29}, {start:44, end:45}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests selections inside a computed property identifer are not treated as member expressions
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452161
+		 */
+		it('test_computedObjectProperty3', function() {
+			editorContext.text = "var x = {a: {}, b: function(a) {var c = arr[a];} };";
+			return occurrences.computeOccurrences(editorContext, setContext(44,45)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:28, end:29}, {start:44, end:45}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests that expression statements are marked as occurrences
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=453337
+		 */
+		it('test_expressionStatements1', function() {
+			editorContext.text = "var a; a; a=1; a;";
+			return occurrences.computeOccurrences(editorContext, setContext(4,4)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:4, end:5}, {start:7, end:8}, {start:10, end:11}, {start:15, end:16}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests that expression statements are marked as occurrences
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=453337
+		 */
+		it('test_expressionStatements2', function() {
+			editorContext.text = "var a; a; a=1; a;";
+			return occurrences.computeOccurrences(editorContext, setContext(8,8)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:4, end:5}, {start:7, end:8}, {start:10, end:11}, {start:15, end:16}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests that expression statements are marked as occurrences
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=453337
+		 */
+		it('test_expressionStatements3', function() {
+			editorContext.text = "var a; a; a=1; a;";
+			return occurrences.computeOccurrences(editorContext, setContext(10,11)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:4, end:5}, {start:7, end:8}, {start:10, end:11}, {start:15, end:16}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests that expression statements are marked as occurrences
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=453337
+		 */
+		it('test_expressionStatements4', function() {
+			editorContext.text = "var a; a; a=1; a;";
+			return occurrences.computeOccurrences(editorContext, setContext(15,16)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:4, end:5}, {start:7, end:8}, {start:10, end:11}, {start:15, end:16}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests that expression statements are marked as occurrences
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=453337
+		 */
+		it('test_expressionStatementsHoisting1', function() {
+			editorContext.text = "a; var a;";
+			return occurrences.computeOccurrences(editorContext, setContext(0,1)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:0, end:1}, {start:7, end:8}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests that expression statements are marked as occurrences
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=453337
+		 */
+		it('test_expressionStatementsHoisting2', function() {
+			editorContext.text = "a; var a;";
+			return occurrences.computeOccurrences(editorContext, setContext(7,7)).then(function(results) {
+				try {
+					assertOccurrences(results, [{start:0, end:1}, {start:7, end:8}]);
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
 	});
 });

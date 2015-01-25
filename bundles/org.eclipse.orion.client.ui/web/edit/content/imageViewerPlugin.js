@@ -14,11 +14,12 @@
 define([
 	'orion/plugin',
 	'orion/Deferred',
-	'orion/commands',
+	'orion/commandsProxy',
 	'orion/keyBinding',
 	'orion/webui/littlelib',
+	'i18n!orion/nls/messages',
 	'orion/URL-shim'
-], function(PluginProvider, Deferred, mCommands, mKeyBinding, lib) {
+], function(PluginProvider, Deferred, mCommandsProxy, mKeyBinding, lib, messages) {
 	var TITLE_H = 25;
 	var MIN_MARGIN_X = 20;
 	var MIN_MARGIN_Y = TITLE_H + MIN_MARGIN_X;
@@ -61,7 +62,7 @@ define([
 		imageTile.appendChild(document.createTextNode(imgW + " x " + imgH + " pixels -- " + Math.floor(img.width/imgW*100) + "%"));
 	}
 	window.onresize = resizeImage;
-	var commandsProxy = new mCommands.CommandsProxy();
+	var commandsProxy = new mCommandsProxy.CommandsProxy();
 	
 	var EDITOR_ID = "orion.viewer.image"; //$NON-NLS-0$
 	
@@ -108,7 +109,7 @@ define([
 	}, {
 		id: EDITOR_ID,
 		"default": true, //$NON-NLS-0$
-		nameKey: "Orion Image Viewer", //$NON-NLS-0$
+		name: messages["Orion Image Viewer"], //$NON-NLS-0$
 		nls: "orion/nls/messages", //$NON-NLS-0$
 		uriTemplate: "../edit/edit.html#{,Location,params*},editor=" + EDITOR_ID //$NON-NLS-0$
 	});

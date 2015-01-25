@@ -1733,6 +1733,151 @@ define([
 //			assert.equal(blocks.length, 1, "Should have found 1 script block");
 			assert.equal(blocks.length, 0, "We don't currently support both type and language attributes on a script tag (Bug 437957)");
 		});
-
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember1', function() {
+			var env = Finder.findESLintEnvForMember('console');
+			assert.equal(env, 'browser', "Should have found the browser env");
+		});
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember2', function() {
+			var env = Finder.findESLintEnvForMember('define');
+			assert.equal(env, 'amd', "Should have found the amd env");
+		});
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember3', function() {
+			var env = Finder.findESLintEnvForMember('describe');
+			assert.equal(env, 'mocha', "Should have found the mocha env");
+		});
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember4', function() {
+			var env = Finder.findESLintEnvForMember('SVGFEMergeNodeElement');
+			assert.equal(env, 'browser', "Should have found the browser env");
+		});
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember5', function() {
+			var env = Finder.findESLintEnvForMember('encodeURIComponent');
+			assert.equal(env, 'builtin', "Should have found the builtin env");
+		});
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember5', function() {
+			var env = Finder.findESLintEnvForMember('encodeURIComponent');
+			assert.equal(env, 'builtin', "Should have found the builtin env");
+		});
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember6', function() {
+			var env = Finder.findESLintEnvForMember(null);
+			assert.equal(env, null, "Should not have found an env");
+		});
+		
+		/**
+		 * Tests the support for finding a member in the ESLint environments description
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findESlintEnvForMember7', function() {
+			var env = Finder.findESLintEnvForMember('undefined');
+			assert.equal(env, 'builtin', "Should not have found an env");
+		});
+		
+		/**
+		 * Tests the support for finding a directive with a given name
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findDirective1', function() {
+		    var text = "/*eslint-env amd*/";
+			return astManager.getAST(setUp(text)).then(function(ast) {
+				try {
+					var comment = Finder.findDirective(ast, 'eslint-env');
+					if(!comment) {
+						assert.fail("Should have found a comment");
+					}
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		
+		/**
+		 * Tests the support for finding a directive with a given name
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findDirective2', function() {
+		    var text = "/*eslint*/";
+			return astManager.getAST(setUp(text)).then(function(ast) {
+				try {
+					var comment = Finder.findDirective(ast, 'eslint');
+					if(!comment) {
+						assert.fail("Should have found a comment");
+					}
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+        /**
+		 * Tests the support for finding a directive with a given name
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findDirective3', function() {
+		    var text = "/*globals console,foo,bar*/";
+			return astManager.getAST(setUp(text)).then(function(ast) {
+				try {
+					var comment = Finder.findDirective(ast, 'globals');
+					if(!comment) {
+						assert.fail("Should have found a comment");
+					}
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
+		/**
+		 * Tests the support for finding a directive with a given name
+		 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=452296
+		 */
+		it('test_findDirective4', function() {
+		    var text = "/**/";
+			return astManager.getAST(setUp(text)).then(function(ast) {
+				try {
+					var comment = Finder.findDirective(ast, 'eslint');
+					if(comment) {
+						assert.fail("Should not have found a comment");
+					}
+				}
+				finally {
+					tearDown();
+				}
+			});
+		});
 	});
 });

@@ -64,6 +64,18 @@
 	margin-top: 8px;
 }
 
+.runBar {
+	display: none;
+	height: 100%;
+}
+
+.runBarVisible {
+	-webkit-align-items: center;		 		 /* Safari */
+	align-items: center;
+	display: -webkit-inline-flex !important;		 /* Safari */
+	display: inline-flex !important;
+}
+
 /* 4px margin used by toolbar, plus 4px of border/padding */
 .status {
 	padding-top: 10px;
@@ -1097,6 +1109,24 @@ textarea.parameterInput {
 
 .discreetInputLabel {
 	font-weight: bold;
+	padding: 8px;
+}
+
+.discreetInputHidden {
+	display: none !important;
+}
+
+.discreetInputURLWrapper {
+	padding: 2px;
+}
+
+.discreetInputCell {
+	color: #666666;	
+	padding: 1px;
+}
+
+.discreetInfoCell {
+	color: #666666;	
 	padding: 8px;
 }
 

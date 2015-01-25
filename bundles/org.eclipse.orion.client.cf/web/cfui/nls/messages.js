@@ -8,17 +8,7 @@
  * 
  * Contributors: IBM Corporation - initial API and implementation
  ******************************************************************************/
- 
-/*eslint-env browser,amd*/
- 
-define(['orion/i18n!cfui/nls/messages', 'cfui/nls/root/messages'], function(bundle, root) {
-	var result = {
-			root:root
-	};
-	Object.keys(bundle).forEach(function(key) {
-		if (typeof result[key] === 'undefined') {
-			result[key] = bundle[key];
-		}
-	});
-	return result;
+ /*eslint-env browser,amd*/
+define({
+	root:true
 });

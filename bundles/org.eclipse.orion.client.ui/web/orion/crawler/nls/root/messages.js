@@ -7,11 +7,9 @@
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
-	"filesFound": "${0} files found out of ${1}",
-	"searchCancelled": "Search cancelled by user",
-	"Cancel": "Cancel"
+define({//Default message bundle
+		"filesFound": "${0} files found out of ${1}",
+		"searchCancelled": "Search cancelled by user",
+		"Cancel": "Cancel"
 });

@@ -24,11 +24,10 @@ define([
 	'orion/git/gitCommands',
 	'orion/commands',
 	'orion/commandRegistry',
-	'orion/metrics',
 	'orion/git/logic/gitCommit',
 	'orion/git/gitConfigPreference',
 	'orion/objects'
-], function(messages, i18nUtil, Deferred, mExplorer, mGitUIUtil, mGitUtil, mTooltip, mSelection , lib, mGitCommands, mCommands, mCommandRegistry, metrics, gitCommit, gitConfigPreference, objects) {
+], function(messages, i18nUtil, Deferred, mExplorer, mGitUIUtil, mGitUtil, mTooltip, mSelection , lib, mGitCommands, mCommands, mCommandRegistry, gitCommit, gitConfigPreference, objects) {
 	
 	var pageQuery = "?pageSize=100&page=1"; //$NON-NLS-0$
 	
@@ -352,6 +351,7 @@ define([
 		this.gitClient = options.gitClient;
 		this.progressService = options.progressService;
 		this.preferencesService = options.preferencesService;
+		this.standAloneOptions = options.standAloneOptions;
 		this.explorerSelectionScope = "explorerSelection";  //$NON-NLS-0$
 		this.explorerSelectionStatus = "explorerSelectionStatus";  //$NON-NLS-0$
 		this.createSelection();
@@ -523,39 +523,42 @@ define([
 				},
 				onComplete: function(tree) {
 					var model = that.model;
-					var gitConfigPref = new gitConfigPreference(that.registry);
-					gitConfigPref.getConfig().then(function(userInfo){
-							var selectFunc = function() {
-								if (that.prefix === "all") { //$NON-NLS-0$
-										that.updateCommands();
-										that.selection.setSelections(model._sortBlock(model.getGroups("staged"))); //$NON-NLS-0$
-									}
-									if (that.prefix === "diff") { //$NON-NLS-0$
-										that.updateCommands();
-									}
-									that.status = model.status;
-									if (that.getItemCount() === 1) {
-										that.expandSections(tree, model.root.children).then(function() {
-											deferred.resolve();
-										});
-										return;
-									}
-									deferred.resolve();
-							};
+					var selectFunc = function() {
+						if (that.prefix === "all") { //$NON-NLS-0$
+							that.updateCommands();
+							that.selection.setSelections(model._sortBlock(model.getGroups("staged"))); //$NON-NLS-0$
+						}
+						if (that.prefix === "diff") { //$NON-NLS-0$
+							that.updateCommands();
+						}
+						that.status = model.status;
+						if (that.getItemCount() === 1) {
+							that.expandSections(tree, model.root.children).then(function() {
+								deferred.resolve();
+							});
+							return;
+						}
+						deferred.resolve();
+					};
+					if (that.prefix === "all") { //$NON-NLS-0$
+						var gitConfigPref = new gitConfigPreference(that.registry);
+						gitConfigPref.getConfig().then(function(userInfo){
 							if (userInfo && userInfo.GitSelectAll) {
-										model.getRoot(function(root) {
-										var selection = root.children.filter(function(item) {
-											return !that.model.isStaged(item.type) && mGitUtil.isChange(item);
-										});
-										that.commandService.runCommand("eclipse.orion.git.stageCommand", selection, that, null, that.repository.status); //$NON-NLS-0$
-										selectFunc();
+								model.getRoot(function(root) {
+									var selection = root.children.filter(function(item) {
+										return !that.model.isStaged(item.type) && mGitUtil.isChange(item);
 									});
+									that.commandService.runCommand("eclipse.orion.git.stageCommand", selection, that, null, that.repository.status); //$NON-NLS-0$
+									selectFunc();
+								});
 							} else {
 								selectFunc();
 							}
-					});
-					
-				}
+						});
+					} else {
+						selectFunc();
+					}
+				} 
 			});
 			return deferred;
 		},
@@ -984,7 +987,6 @@ define([
 						var config = commitLogic.getGitCloneConfig(explorer.model.status.Clone.Config);
 						
 						var amendCheck = explorer.amendCheck = createInput(bottomLeft, "amendCheck", "SmartAmend", null, null, true); //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
-						explorer.changeIDCheck = createInput(bottomLeft, "changeIDCheck", 'SmartChangeId', null, null, true); //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
 						amendCheck.addEventListener("change", function() { //$NON-NLS-0$
 							if (amendCheck.checked) {
 								var repository = explorer.model.repository;
@@ -1000,7 +1002,8 @@ define([
 						
 						var moreDiv = document.createElement("div"); //$NON-NLS-0$
 						bottomLeft.appendChild(moreDiv);
-						
+
+						explorer.changeIDCheck = createInput(moreDiv, "changeIDCheck", 'SmartChangeId', null, null, true); //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
 						var div1Content = createGroup(moreDiv, "Author:"); //$NON-NLS-0$
 						explorer.authorNameInput = createInput(div1Content, "authorNameInput", "Name:", "AuthorNamePlaceholder", config.AuthorName); //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
 						explorer.authorEmailInput = createInput(div1Content, "authorEmailInput", "Email:", "AuthorEmailPlaceholder", config.AuthorEmail); //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
@@ -1193,7 +1196,8 @@ define([
 								//If the widget is maximized, as the file name is not visible, the "*" is rendered right beside the left hand action wrapper
 								item.parent.Type === "Diff" ? null : [explorer.prefix + item.parent.name + item.parent.type + "FileItemId", dirtyindicator.id], //$NON-NLS-1$ //$NON-NLS-0$ //The compare widget title where the dirty indicator can be inserted
 								//We need to attach the compare widget reference to the model. Also we need the widget to be destroy when the model is destroyed.
-								item
+								item,
+								this.explorer.standAloneOptions
 							);
 						}.bind(this), 0);
 					}

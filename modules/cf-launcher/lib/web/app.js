@@ -10,52 +10,69 @@
  *******************************************************************************/
 /*eslint-env node*/
 var bodyParser = require("body-parser"),
-    cfAppEnv = require("cfenv").getAppEnv(),
+    cfAppEnv = require("cfenv").getAppEnv({ protocol: "https:" }), // Always generate https: urls to ourself
     compression = require("compression"),
     express = require("express"),
     flash = require("connect-flash"),
-    http = require("http"),
     path = require("path"),
-    sessions = require("client-sessions"),
-    nodeurl = require("url"),
     appControl = require("./appctl"),
+    Auth = require("./auth"),
+    Cors = require("./cors"),
     dav = require("./dav"),
+    Logger = require("../logger"),
+    log = Logger(""), // main
+    authlog = Logger("auth"),
+    proxylog = Logger("proxy"),
     ProcessManager = require("../proc"),
     ProxyManager = require("./proxy"),
-    tty = require("./tty"),
-    util = require("../util");
+    tty = require("./tty");
+
+var TARGET_APP = "target";
 
 var moduleDir = path.join(__dirname, "..", "..");
 
-
-function startProcesses(appName, appCommand, port_app, port_debug) {
+function startProcesses(appCommand, label, port_app, port_debug) {
 	var procman = new ProcessManager();
-	// Chose DEBUG state here for initial launch, it's less confusing that way
-	procman.startApp(appName, appCommand, port_app, ProcessManager.State.DEBUG);
+	// Chose DEBUG state here for initial launch, it's less confusing than DEBUG_BREAK
+	procman.startApp(TARGET_APP, appCommand, label, port_app, ProcessManager.State.DEBUG);
 	procman.startDebugger("debugger", port_debug);
 	return procman;
 }
 
+function checkParams(options) {
+	function fail(p) {
+		throw new Error("Missing or invalid parameter: " + p);
+	}
+
+	!Array.isArray(options.appCommand)    && fail("appCommand");
+	typeof options.urlPrefix !== "string" && fail("urlPrefix");
+	typeof options.password !== "string"  && fail("password");
+	isNaN(Number(options.port))           && fail("port");
+
+	options.port = Number(options.port); // coerce to number
+}
+
 function createProxyApp(options) {
-	util.checker(options)
-		.array("appCommand")
-		.string("appName")
-		.string("urlPrefix")
-		.optString("password") // password is optional
-		.numbery("port");
+	checkParams(options);
 
 	var appCommand = options.appCommand,
-	    appName = options.appName,
+	    corsWhitelist = options.corsWhitelist,
 	    launcherPrefix = "/" + options.urlPrefix,
 	    password = options.password,
-	    port = options.port,
-	    useAuth = (typeof options.password === "string");
+	    port = options.port;
 
-	util.log("Password %s", (useAuth ? "set" : "not set"));
-	util.log("Application command line: %s", appCommand);
-	util.log("VCAP_APP_PORT: %s", port);
-	util.log("Launcher URL prefix: %s", launcherPrefix);
-	util.log();
+	log("Application command line: %s", appCommand);
+	log("VCAP_APP_PORT: %s", port);
+	log("Launcher URL prefix: %s", launcherPrefix);
+	log("CORS origins: [%s]", corsWhitelist.join(", "));
+	log();
+
+	// ===================================================================
+	// Create auth & session management
+	var isAuthenticated = Auth.isAuthenticated,
+	    realm = "cf-launcher (username is 'vcap')",
+	    auth = Auth({ password: password, realm: realm }),
+	    cors = Cors({ whitelist: corsWhitelist });
 
 	// Create proxies, start app & inspector
 	var proxyman = new ProxyManager(port);
@@ -67,80 +84,73 @@ function createProxyApp(options) {
 	});
 	var inspector = proxies.inspector,
 	    target = proxies.target;
-	var procman = startProcesses(appName, appCommand, target.port, inspector.port);
+	var procman = startProcesses(appCommand, options.appName, target.port, inspector.port);
 	var ttyServer = tty.createServer({ port: proxies.tty.port }).listen();
-	var davServer = dav.createServer(proxies.dav.port, password);
-	util.log("[Internal] Application port: %s", target.port);
-	util.log("[Internal] node-inspector port: %s", inspector.port);
-
-	// ===================================================================
-	// Setup authentication and client-side session.
-	var sessionMiddleware, isLoggedIn;
-	if (useAuth) {
-		sessionMiddleware = sessions({
-			cookieName: "cfLauncherSession",
-			requestKey: "session", // connect-flash requires this key to be "session"
-			secret: password,
-			duration: 24 * 60 * 60 * 1000,
-			activeDuration: 1000 * 60 * 5,
-		});
-		isLoggedIn = function(req) {
-			return req.session.loggedIn;
-		};
-	} else {
-		sessionMiddleware = function(req, res, next) {
-			req.session = { reset: function(){} };
-			next();
-		};
-		isLoggedIn = function() { return true; };
-	}
+	var davServer = dav.createServer({
+			port: proxies.dav.port,
+			password: password,
+			authBackend: auth.backend,
+			realm: realm,
+	});
+	log("[Internal] Application port: %s", target.port);
+	log("[Internal] node-inspector port: %s", inspector.port);
 
 	// ===================================================================
 	var launcherApp = express.Router(), appPrefix = "/apps";
 	launcherApp.use(bodyParser());
+	launcherApp.use(cors);
+	launcherApp.options("*", cors); // enable pre-flight request for all routes
+	launcherApp.use(auth); // Middleware to lookup auth status
 	launcherApp.post("/login", function(req, res) {
 		if (req.body.password === password) {
-			util.log("Successful login from: %s", req.ip);
-			req.session.loggedIn = true;
+			authlog("Successful login from: %s", req.ip);
+			auth.setClientSession(req, true);
 			res.redirect(launcherPrefix);
 		} else {
-			util.log("Failed login attempt from: %s", req.ip);
+			authlog("Failed login attempt from: %s", req.ip);
 			req.flash("error", "Incorrect password.");
 			res.redirect("login");
 		}
 	});
 	launcherApp.get("/login", function(req, res) {
-		if (isLoggedIn(req, res)) {
+		if (isAuthenticated(req, res)) {
 			return res.redirect(launcherPrefix);
 		}
 		res.render("login", { error: req.flash().error });
 	});
 	launcherApp.get("/logout", function(req, res) {
-		util.log("Logout %s", req.ip);
-		req.session.reset();
+		authlog("Logout %s", req.ip);
+		auth.setClientSession(req, false);
 		res.redirect("login");
 	});
-	// jsDAV supplies its own auth, so it goes outside the session check
+	// jsDAV supplies its own auth strategy, so it goes outside the session check
 	launcherApp.use("/dav/", function(req, res) {
+		proxylog("%s %s -> dav", req.method, req.url);
 		proxies.dav.proxy.web(req, res);
 	});
 	// CSS resources can be accessed without session
 	launcherApp.use("/css", express.static(path.join(moduleDir, "public/css")));
 	launcherApp.use(function(req, res, next) {
-		if (isLoggedIn(req))
+		if (isAuthenticated(req))
 				return next();
-		res.redirect(launcherPrefix + "/login");
+		// If it's a request for the cf-launcher root, redirect to login page, otherwise 401
+		if (req.url === "/")
+			res.redirect(launcherPrefix + "/login");
+		else
+			res.status(401).send("Unauthorized");
 	});
 	// ---> Routes below this point require a valid session <---
 	launcherApp.use("/", express.static(path.join(moduleDir, "public")));
 	launcherApp.all(appPrefix, function(req, res, next) {
-		// Redirect /apps to /apps. This would be better in appctrl.js
+		// Redirect /apps to /apps/. Note that code 308 prevents clients from changing the method to GET upon
+		// following the redirect. TODO This code would be better in appctrl.js.
 		if (req.originalUrl.slice(-1) !== "/")
-			res.redirect(appPrefix.substr(1) + "/"); // "apps/"
+			res.redirect(308 /*permanent*/, appPrefix.substr(1) + "/"); // "apps/"
 		else next();
 	});
-	launcherApp.use(appPrefix, appControl(procman, appName));
+	launcherApp.use(appPrefix, appControl(procman, TARGET_APP));
 	launcherApp.use("/tty/", function(req, res) {
+		proxylog("%s %s -> tty", req.method, req.url);
 		proxies.tty.proxy.web(req, res);
 	});
 	launcherApp.use("/help/dav", function(req, res) {
@@ -162,12 +172,12 @@ function createProxyApp(options) {
 	// The fix is to load the engine here, from the correct require context.
 	app.engine("ejs", require("ejs").__express);
 	app.use(compression());
-	app.use(sessionMiddleware);
 	app.use(flash());
 	app.use(launcherPrefix, launcherApp);
 	app.use(function(req, res/*, next*/) {
-		if (procman.get(appName).state !== ProcessManager.State.STOP) {
+		if (procman.get(TARGET_APP).state !== ProcessManager.State.STOP) {
 			// App is running, proxy the request to it
+			proxylog("%s -> target app", req.url);
 			target.proxy.web(req, res);
 		} else {
 			// App not running, redirect user to launcher for convenience
@@ -176,67 +186,12 @@ function createProxyApp(options) {
 	});
 	return {
 		proxies: proxies,
+		logger: proxylog,
 		serverApp: app,
 		processManager: procman,
-		sessionMiddleware: sessionMiddleware,
-		isLoggedIn: isLoggedIn,
+		authMiddleware: auth,
+		isAuthenticated: isAuthenticated,
 	};
 }
 
-/**
- * @param {String} options.appName
- * @param {String[]} options.appCommand
- * @param {String} options.urlPrefix
- * @param {Number} options.port Port we should listen on.
- */
-function startServer(options) {
-	var launcherPrefix = options.urlPrefix,
-	    port = options.port;
-
-	var result = createProxyApp(options),
-	    proxies = result.proxies,
-	    serverApp = result.serverApp,
-	    processManager = result.processManager,
-	    sessionMiddleware = result.sessionMiddleware,
-	    isLoggedIn = result.isLoggedIn;
-
-	var server = http.createServer(serverApp);
-	// Listen to `upgrade` event and proxy incoming WebSocket requests to either inspector, tty, or user app.
-	// TODO: clean this up -- there has to be a better way
-	server.on("upgrade", function(req, socket, head) {
-		var url = req._parsedUrl || nodeurl.parse(req.url);
-		var segs = url.pathname.split("/").slice(1), rootSegment = segs[0];
-		if (rootSegment !== launcherPrefix)
-			return proxies.target.proxy.ws(req, socket, head); // not for us, send to user app
-
-		// At this point we know the request is for something in the launcher, either inspector or TTY
-		var service = segs[1], destinationProxy;
-		if (service === "ws") {
-			// node-inspector makes a ws connection to "ws://[whatever]/launcher/ws?", which we catch here.
-			destinationProxy = proxies.inspector.proxy;
-		} else if (service === "tty") {
-			// Hack: we have a url like /launcher/tty/socket.io?foo but tty.js is expecting /socket.io?foo
-			// so chop off the leading 2 segments and shove the result back into req.url before proxying
-			// TODO try http-proxy forward or forwardPath
-			url.pathname = "/" + segs.slice(2).join("/");
-			req._parsedUrl = url;
-			req.url = nodeurl.format(url);
-			destinationProxy = proxies.tty.proxy;
-		}
-		// Check login
-		sessionMiddleware(req, {}, function(err) {
-			if (isLoggedIn(req)) {
-				return destinationProxy.ws(req, socket, head);
-			}
-			util.log("Rejected unauthenticated websocket access from %s", req.ip);
-			return socket.destroy();
-		});
-	});
-	processManager.on("debuggerListening", function() {
-		server.emit("initialized");
-	});
-	server.listen(port);
-	return server;
-}
-
-module.exports = startServer;
+module.exports = createProxyApp;

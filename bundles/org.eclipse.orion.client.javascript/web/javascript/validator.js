@@ -14,30 +14,41 @@ define([
 	"eslint",
 	"orion/objects",
 	"javascript/astManager",
-	"javascript/finder"
-], function(eslint, Objects, ASTManager, Finder) {
-	// Should have a better way of keeping this up-to-date with ./load-rules-async.js
+	"javascript/finder",
+	"orion/i18nUtil",
+	"i18n!javascript/nls/problems"
+], function(eslint, Objects, ASTManager, Finder, i18nUtil, messages) {
 	var config = {
 		// 0:off, 1:warning, 2:error
 		rules: {
 			"curly" : 0, //$NON-NLS-0$
 			"eqeqeq": 1, //$NON-NLS-0$
-			"missing-doc": [1, {decl: 0, expr: 0}], //$NON-NLS-0$
+			"missing-doc": 0,  //$NON-NLS-0$
 			"new-parens" : 1, //$NON-NLS-0$
+			"no-caller": 1, //$NON-NLS-0$
+			"no-cond-assign": 2, //$NON-NLS-0$
+			"no-comma-dangle": 0,  //$NON-NLS-0$
+			"no-console": 2,  //$NON-NLS-0$
+			"no-constant-condition": 2,  //$NON-NLS-0$"
 			"no-debugger" : 1, //$NON-NLS-0$
 			"no-dupe-keys" : 2, //$NON-NLS-0$
 			"no-eval" : 0, //$NON-NLS-0$
 			"no-extra-semi": 1, //$NON-NLS-0$
+			"no-iterator": 2,  //$NON-NLS-0$
 			'no-jslint' : 1,  //$NON-NLS-0$
 			"no-new-array": 1, //$NON-NLS-0$
 			"no-new-func": 1, //$NON-NLS-0$
 			"no-new-object": 1, //$NON-NLS-0$
 			"no-new-wrappers": 1, //$NON-NLS-0$
 			"no-redeclare": 1, //$NON-NLS-0$
+			"no-reserved-keys": 2, //$NON-NLS-0$
+			"no-regex-spaces": 2, //$NON-NLS-0$
+			"no-shadow": 1, //$NON-NLS-0$
 			"no-undef": 2, //$NON-NLS-0$
 			"no-unused-params": 1, //$NON-NLS-0$
 			"no-unused-vars": 1, //$NON-NLS-0$
 			"no-use-before-define": 1, //$NON-NLS-0$
+			"radix": 1, //$NON-NLS-0$
 			"semi": 1, //$NON-NLS-0$
 			"throw-error": 1, //$NON-NLS-0$
 			"use-isnan" : 2, //$NON-NLS-0$
@@ -113,6 +124,23 @@ define([
 	}
 	
 	/**
+	 * @description Computes the problem id to use in the framework from the ESLint problem object
+	 * @param {Object} pb The original ESLint problem
+	 * @returns {String} The problem id to pass into the framework
+	 * @since 8.0
+	 */
+	function getProblemId(pb) {
+	    if(pb.args) {
+	        if(pb.args.pid) {
+	            return pb.args.pid;
+	        } else if(pb.args.nls) {
+	            return pb.args.nls;
+	        }
+	    }
+	    return pb.ruleId;
+	}
+	
+	/**
 	 * @description Converts an eslint / esprima problem object to an Orion problem object
 	 * @public
 	 * @param {eslint.Error|esprima.Error} e Either an eslint error or an esprima parse error.
@@ -131,10 +159,15 @@ define([
 				end = relatedToken.range[1];
 			}
 		}
+		var descriptionKey = e.args && e.args.nls ? e.args.nls : e.ruleId;
+		var descriptionArgs = e.args || Object.create(null);
+		var description = e.message;
+		if (descriptionKey && messages[descriptionKey]) {
+           description = i18nUtil.formatMessage.call(null, messages[descriptionKey], descriptionArgs);
+		}
 		var prob = {
-		    descriptionKey: (e.args && e.args.nls ? e.args.nls : e.ruleId),
-		    descriptionArgs: e.args,
-			description: e.message,
+		    id: getProblemId(e),
+			description: description,
 			severity: getSeverity(e),
 		};
 		if(typeof(start) !== 'undefined') {
@@ -314,36 +347,84 @@ define([
 			if (!properties) {
 				return;
 			}
-			// TODO these option -> setting mappings are becoming hard to manage
-			// And they must be kept in sync with javascriptPlugin.js
-			config.setOption("curly", properties.validate_curly); //$NON-NLS-0$
-			config.setOption("eqeqeq", properties.validate_eqeqeq); //$NON-NLS-0$
-			config.setOption("missing-doc", properties.validate_func_decl, "decl"); //$NON-NLS-0$ // missing-func-decl-doc
-			config.setOption("missing-doc", properties.validate_func_expr, "expr"); //$NON-NLS-0$ // missing-func-expr-doc
-			config.setOption("new-parens", properties.validate_new_parens); //$NON-NLS-0$
-			config.setOption("no-debugger", properties.validate_debugger); //$NON-NLS-0$
-			config.setOption("no-dupe-keys", properties.validate_dupe_obj_keys); //$NON-NLS-0$
-			config.setOption("no-eval", properties.validate_eval); //$NON-NLS-0$
-			config.setOption("no-extra-semi", properties.validate_unnecessary_semi); //$NON-NLS-0$
-			config.setOption("no-new-array", properties["no-new-array"]); //$NON-NLS-1$ //$NON-NLS-0$
-			config.setOption("no-new-func", properties["no-new-func"]); //$NON-NLS-1$ //$NON-NLS-0$
-			config.setOption("no-new-object", properties["no-new-object"]); //$NON-NLS-1$ //$NON-NLS-0$
-			config.setOption("no-new-wrappers", properties["no-new-wrappers"]); //$NON-NLS-1$ //$NON-NLS-0$
-			config.setOption("no-redeclare", properties.validate_no_redeclare); //$NON-NLS-0$
-			config.setOption("no-undef", properties.validate_no_undef); //$NON-NLS-0$
-			config.setOption("no-unused-params", properties.validate_unused_params); //$NON-NLS-0$
-			config.setOption("no-unused-vars", properties.validate_no_unused_vars); //$NON-NLS-0$
-			config.setOption("no-use-before-define", properties.validate_use_before_define); //$NON-NLS-0$
-			config.setOption("semi", properties.validate_missing_semi); //$NON-NLS-0$
-			config.setOption("throw-error", properties.validate_throw_error); //$NON-NLS-0$
-			config.setOption("use-isnan", properties.validate_use_isnan); //$NON-NLS-0$
-			config.setOption("no-unreachable", properties.validate_no_unreachable); //$NON-NLS-0$
-			config.setOption("no-fallthrough", properties.validate_no_fallthrough); //$NON-NLS-0$
-			config.setOption("no-jslint", properties.validate_no_jslint); //$NON-NLS-0$
-			config.setOption("no-empty-block", properties.validate_no_empty_block); //$NON-NLS-0$
-			config.setOption("valid-typeof", properties.validate_typeof); //$NON-NLS-0$
-			config.setOption("no-sparse-arrays", properties.validate_no_sparse_arrays); //$NON-NLS-0$
+			var keys = Object.keys(properties);
+			var seen = Object.create(null);
+			for(var i = 0; i < keys.length; i++) {
+			    var key = keys[i];
+			    var ruleId = key;
+			    var legacy = this._legacy[ruleId];
+			    if(typeof(legacy) === 'string') {
+			        ruleId = legacy;
+			        if(seen[ruleId]) {
+			            //don't overwrite a new pref name with a legacy one
+			            continue;
+			        }
+			    }
+			    seen[ruleId] = true;
+			    config.setOption(ruleId, properties[key]);
+			}
+		},
+		
+		/**
+		 * @description Hook for the test suite to enable only the given rule
+		 * @function
+		 * @private
+		 * @param {String} ruleid The id for the rule
+		 * @param {Number} severity The desired severity or null
+		 * @param {String} opts Option for a given rule, for example the missing-doc rule has 'decl' or 'expr'
+		 * @since 8.0
+		 */
+		_enableOnly: function _enableOnly(ruleid, severity, opts) {
+		    var keys = Object.keys(config.rules);
+		    for(var i = 0; i < keys.length; i++) {
+		        if(keys[i] === ruleid) {
+		            config.setOption(ruleid, severity ? severity : 2, opts);
+		        } else {
+		            config.setOption(keys[i], 0);
+		        }
+		    }
+		},
+		
+		/**
+		 * All new pref ids MUST be the id of the rule they are for, but to 
+		 * not break existing prefs this object translates the old pref name to its rule name
+		 * @private 
+		 * @since 8.0
+		 */
+		_legacy: {
+		    validate_no_cond_assign: 'no-cond-assign',
+		    validate_no_constant_condition: 'no-constant-condition',
+		    validate_no_caller: 'no-caller',
+		    validate_eqeqeq: 'eqeqeq',
+		    validate_no_console: 'no-console',
+		    validate_debugger: 'no-debugger',
+		    validate_eval: 'no-eval',
+		    validate_no_iterator:'no-iterator',
+		    validate_dupe_obj_keys: 'no-dupe-keys',
+		    validate_typeof: 'valid-typeof',
+		    validate_use_before_define: 'no-use-before-define',
+		    validate_new_parens: 'new-parens',
+		    validate_radix: 'radix',
+		    validate_missing_semi: 'semi',
+		    validate_no_regex_spaces: 'no-spaces-regex',
+		    validate_use_isnan: 'use-isnan',
+		    validate_throw_error: 'throw-error',
+		    validate_no_reserved_keys: 'no-reserved-keys',
+		    validate_no_sparse_arrays: 'no-sparse-arrays',
+		    validate_curly: 'curly',
+		    validate_no_fallthrough: 'no-fallthrough',
+		    validate_no_comma_dangle: 'no-comma-dangle',
+		    validate_no_undef: 'no-undef',
+		    validate_no_empty_block: 'no-empty-block',
+		    validate_unnecessary_semi: 'no-extra-semi',
+		    validate_no_jslint: 'no-jslint',
+		    validate_unused_params: 'no-unused-params',
+		    validate_no_unused_vars: 'no-unused-vars',
+		    validate_no_unreachable: 'no-unreachable',
+		    validate_no_redeclare: 'no-redeclare',
+		    validate_no_shadow: 'no-shadow'
 		}
+		
 	});
 	return ESLintValidator;
 });

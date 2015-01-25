@@ -29,7 +29,11 @@ define([
 		if(!require.toUrl){
 			return new URL("/", window.location.href).href.slice(0, -1);
 		} else {
-			return new URL(require.toUrl("orion/../"), window.location.href).href.slice(0, -1); //$NON-NLS-0$
+			// The idea here is to find the path of `orion/*` modules from the loader, and go up one folder to
+			// the servlet context path. Finally, return a complete URL, slicing off the trailing `/`.
+			// RequireJS 2.1.15:
+			var orionSrcURL = new URL(require.toUrl("orion/"), window.location.href); //$NON-NLS-0$
+			return new URL("../", orionSrcURL).href.slice(0, -1); //$NON-NLS-0$
 		}
 	}
 
@@ -56,21 +60,6 @@ define([
 		return props;
 	}
 
-	/**
-	 * Loads translated name if possible.
-	 * @returns {orion.Promise} The info, with info.textContent set
-	 */
-	function _loadTranslatedName(info) {
-		return i18nUtil.getMessageBundle(info.nls).then(function(messages) {
-			info.textContent = info.nameKey ? messages[info.nameKey] : info.name;
-			return info;
-		}, function(error) {
-			// Bundle failed to load. Fallback to untranslated name
-			info.textContent = info.nameKey || info.name;
-			return info;
-		});
-	}
-
 	function _readPageLinksMetadata(serviceRegistry, serviceName) {
 		serviceName = serviceName || "orion.page.link"; //$NON-NLS-0$
 
@@ -93,12 +82,8 @@ define([
 			expandedHref = PageUtil.validateURLScheme(expandedHref);
 			info.href = expandedHref;
 
-			if(info.nls){
-				navLinkInfos.push(_loadTranslatedName(info));
-			} else {
-				info.textContent = info.name;
-				navLinkInfos.push(new Deferred().resolve(info));
-			}
+			info.textContent = info.name || info.nameKey;
+			navLinkInfos.push(new Deferred().resolve(info));
 		});
 		return Deferred.all(navLinkInfos);
 	}
@@ -121,12 +106,8 @@ define([
 					return;
 				}
 				info.service = serviceRegistry.getService(serviceRef);
-				if (info.nls) {
-					categoryInfos.push(_loadTranslatedName(info));
-				} else {
-					info.textContent = info.name;
-					categoryInfos.push(new Deferred().resolve(info));
-				}
+				info.textContent = info.name;
+				categoryInfos.push(new Deferred().resolve(info));				
 			});
 			return Deferred.all(categoryInfos).then(function(infos) {
 				_cachedCategories = new CategoriesInfo(infos);

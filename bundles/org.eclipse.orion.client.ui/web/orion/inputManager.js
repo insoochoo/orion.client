@@ -98,6 +98,7 @@ define([
 			error = _makeError(error);
 		}
 		statusService.setProgressResult(error);
+		return error;
 	}
 
 	/**
@@ -328,7 +329,6 @@ define([
 
 			this.dispatchEvent({ type: "Saving", inputManager: this}); //$NON-NLS-0$
 
-			editor.markClean();
 			var contents = editor.getText();
 			var data = contents;
 			if (this._getSaveDiffsEnabled() && !this._errorSaving) {
@@ -370,11 +370,13 @@ define([
 				if (self.postSave) {
 					self.postSave(closing);
 				}
+				editor.markClean();
 				return done(result);
 			}
 			function errorHandler(error) {
 				self.reportStatus("");
-				handleError(statusService, error);
+				var errorMsg = handleError(statusService, error);
+				mMetrics.logEvent("status", "error", (self._autoSaveActive ? "Auto-save: " : "Save: ") + errorMsg.Message); //$NON-NLS-3$ //$NON-NLS-2$ //$NON-NLS-1$ //$NON-NLS-0$
 				self._errorSaving = true;
 				return done();
 			}
@@ -410,6 +412,7 @@ define([
 		 */
 		setAutoSaveTimeout: function(timeout) {
 			this._autoSaveEnabled = timeout !== -1;
+			this._autoSaveActive = false;
 			if (!this._idle) {
 				var options = {
 					document: document,
@@ -418,7 +421,10 @@ define([
 				this._idle = new Idle(options);
 				this._idle.addEventListener("Idle", function () { //$NON-NLS-0$
 					if (!this._errorSaving) {
-						this.save();
+						this._autoSaveActive = true;
+						this.save().then(function() {
+							this._autoSaveActive = false;
+						});
 					}
 				}.bind(this));
 			} else {
@@ -572,10 +578,7 @@ define([
 				this.processParameters(input);
 			}
 
-			if (window.orionPageLoadStart) {
-				var interval = new Date().getTime() - window.orionPageLoadStart;
-				mMetrics.logTiming("page", "interactive", interval, window.location.pathname); //$NON-NLS-1$ //$NON-NLS-0$
-			}
+			mMetrics.logPageLoadTiming("interactive", window.location.pathname); //$NON-NLS-0$
 		}
 	});
 	return {

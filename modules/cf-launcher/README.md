@@ -62,19 +62,12 @@ Where `COMMAND` is the command you usually use to start your app (for example, `
 
 The supported `[options]` are:
 
-#### `--password=secret`
-Required. Gives the password used to log in to cf-launcher.
-####  `--urlprefix=prefix`
-Optional. Gives the URL prefix reserved by cf-launcher. Defaults to `urlprefix=launcher`.
+**`--password=secret`** Required. Gives the password used to log in to cf-launcher.
 
-## Environment variables ##
-* The `DEBUG` environment variable enables debugging output from cf-launcher. Set it to "cf-launcher" to activate it:
-   ```shell
-   $ cf set-env myapp DEBUG cf-launcher
-   ```
- (The DEBUG variable can enable debugging for multiple libraries simultaneously. See [debug](https://www.npmjs.org/package/debug) for details.)
+**`--urlprefix=prefix`** Optional. Gives the URL prefix reserved by cf-launcher. Defaults to `urlprefix=launcher`.
 
-* The `PASSWORD` environment variable gives the password used to log in to cf-launcher.
+**`--cors=origin`** Optional. Enables CORS requests to cf-launcher from the given [origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS#Origin).
+  By default, CORS is not enabled.
 
 ## User interface
 Once you've logged in, you're taken to a landing page that shows the status of your app, and the stdout/stderr log. Use the tabs
@@ -88,18 +81,17 @@ Most operating systems ship with a WebDAV client built in, allowing you to map y
 can then view and edit the files in your app instance as easily as local files.
 
 WebDAV connection info:
-* URL: `http://your_application_url/launcher/dav`
-* Username: (Any username should work, but don't leave it blank.)
+* URL: `https://your_application_url/launcher/dav`
+* Username: `vcap`
 * Password: (The password you chose when you set up cf-launcher.)
+
+HTTPS is mandatory when connecting from most WebDAV clients: accessing your files using an `http://..` URL will fail.
+But who needs HTTP anyway?
 
 For detailed setup instructions, see:
 * [Windows](http://doc.owncloud.org/server/6.0/user_manual/files/files.html#windows)
 * [OS X](http://support.apple.com/kb/PH13859)
 * [Linux](http://doc.owncloud.org/server/6.0/user_manual/files/files.html#linux)
-
-Note: we've encountered certain Cloud Foundry fabrics that block WebDAV requests at the network level. If you have problems
-connecting with WebDAV, deploy a [test application](https://github.com/mamacdon/propfind) on your CF fabric to verify that
-it supports DAV requests.
 
 ## Uninstallation ##
 When your app is ready for production, you should uninstall cf-launcher.
@@ -112,6 +104,39 @@ When your app is ready for production, you should uninstall cf-launcher.
 
 2. Restore your application's original start command.
 
+## Environment variables ##
+cf-launcher can be controlled using the following environment variables:
+
+#### DEBUG ####
+The `DEBUG` environment variable enables debugging output from cf-launcher. For example this:
+```shell
+$ cf set-env myapp DEBUG cf-launcher:*
+```
+will print all debug output from cf-launcher to standard output, meaning it will appear in your app's `cf logs`.
+
+To filter debug output, the following suffixes can appear after cf-launcher:
+* `*`: logs everything.
+* `auth`: logs login attempts and logouts.
+* `proc`: logs action taken by the process manager, which is responsible for managing the lifecycle of the
+  target app and node inspector. It can be scoped down further:
+  * `proc:target`: logs only actions related to the target app process.
+  * `proc:debugger`: logs only actions related to the node-inspector process.
+* `proxy`: logs action taken by the reverse proxy, which takes over the web port and forwards requests based
+  on the request URL.
+* `webdav`: logs WebDAV requests. (This is an alias for the `debugMode` flag in the underlying jsDAV server.)
+
+The `DEBUG` variable is very flexible. See [debug](https://www.npmjs.org/package/debug) for full details.
+
+#### LAUNCHER_CORS_ORIGINS ####
+* Gives a JSON array of origins that CORS requests will be allowed from.
+* For example, to allow CORS requests from https://foo.example.org:
+```shell
+cf set-env myapp LAUNCHER_CORS_ORIGINS "[\"https://foo.example.org\"]"
+```
+* If any `--cors` command-line options are provided, the environment variable is ignored.
+
+#### PASSWORD ####
+* The `PASSWORD` environment variable gives the password used to log in to cf-launcher.
 
 ## License ##
 Dual licensed under the

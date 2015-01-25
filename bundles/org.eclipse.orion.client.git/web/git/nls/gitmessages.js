@@ -7,17 +7,7 @@
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
- 
 /*eslint-env browser, amd*/
- 
-define(['orion/i18n!git/nls/gitmessages', 'git/nls/root/gitmessages'], function(bundle, root) {
-	var result = {
-			root:root
-	};
-	Object.keys(bundle).forEach(function(key) {
-		if (typeof result[key] === 'undefined') {
-			result[key] = bundle[key];
-		}
-	});
-	return result;
+define({
+	root:true
 });

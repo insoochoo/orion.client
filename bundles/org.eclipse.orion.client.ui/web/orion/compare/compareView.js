@@ -511,16 +511,14 @@ exports.TwoWayCompareView = (function() {
 		
 		//Navigate to the proper diff block or diff word if editor's selection or caret hits a diff
 		textView.addEventListener("Selection", function(evt){ //$NON-NLS-0$
-			if(evt.newValue){
-				if(evt.newValue.start !== evt.newValue.end){
-					return;
-				}
+			var selections = Array.isArray(evt.newValue) ? evt.newValue : [evt.newValue];
+			if(selections.length > 1 || !selections[0].isEmpty()){
+				return;
 			}
 			if(this._diffNavigator.autoSelecting || !this._diffNavigator.editorWrapper[0].diffFeeder){
 				return;
 			}
-			var caretPos = textView.getCaretOffset();
-			this._diffNavigator.gotoDiff(caretPos, textView);
+			this._diffNavigator.gotoDiff(selections[0].getCaret(), textView);
 		}.bind(this)); 
 		
 		//If left editor's contents changes, we refesh the curver renderer to match new diff
@@ -680,6 +678,13 @@ exports.TwoWayCompareView = (function() {
 		}
 		return null;
 	};
+	/**
+	 * Convert the 0-based line number from logical to physical or vice versa. 
+	 * @param[int] lineNumber The 0 based line number to convert.
+	 * @param[boolean] reverse If false or not defined, convert from logical number to phsical number. Otherwie convert from physical to logical.
+	 * 				   Physical number is the line number in the text editor, merged if any. Logical number is what shows in the ruler.
+	 * @returns {int} the converted number, 0-based. -1 means that the phical number can not be converted to a logical number, which means an empty number in the ruler.
+	 */
 	TwoWayCompareView.prototype.getLineNumber = function(lineNumber){
 		return lineNumber;
 	};
@@ -778,16 +783,14 @@ exports.InlineCompareView = (function() {
                 function(lineIndex, ruler){this._diffNavigator.matchPositionFromOverview(lineIndex);}.bind(this));
 		
 		this._textView.addEventListener("Selection", function(evt){ //$NON-NLS-0$
-			if(evt.newValue){
-				if(evt.newValue.start !== evt.newValue.end){
-					return;
-				}
+			var selections = Array.isArray(evt.newValue) ? evt.newValue : [evt.newValue];
+			if(selections.length > 1 || !selections[0].isEmpty()){
+				return;
 			}
 			if(this._diffNavigator.autoSelecting || !this._diffNavigator.editorWrapper[0].diffFeeder){
 				return;
 			}
-			var caretPos = this._textView.getCaretOffset();
-			this._diffNavigator.gotoDiff(caretPos, this._textView);
+			this._diffNavigator.gotoDiff(selections[0].getCaret(), this._textView);
 		}.bind(this)); 
 	};
 
@@ -895,9 +898,24 @@ exports.InlineCompareView = (function() {
 		}
 		return null;
 	};
-	InlineCompareView.prototype.getLineNumber = function(lineNumber){
-		var mergedNumber = mCompareUtils.convertMergedLineNumber(this._mapper, lineNumber);
-		return mergedNumber;
+	/**
+	 * Convert the 0-based line number from logical to physical or vice versa. 
+	 * @param[int] lineNumber The 0 based line number to convert.
+	 * @param[boolean] reverse If false or not defined, convert from logical number to phsical number. Otherwie convert from physical to logical.
+	 * 				   Physical number is the line number in the text editor, merged if any. Logical number is what shows in the ruler.
+	 * @returns {int} the converted number, 0-based. -1 means that the phical number can not be converted to a logical number, which means an empty number in the ruler.
+	 */
+	InlineCompareView.prototype.getLineNumber = function(lineNumber, reverse){
+		if(reverse) {
+			var diffFeeder = this._diffNavigator.getFeeder(true);
+			if(diffFeeder) {
+				return diffFeeder.getLineNumber(lineNumber);
+			}
+			return lineNumber;
+		} else {
+			var mergedNumber = mCompareUtils.convertMergedLineNumber(this._mapper, lineNumber);
+			return mergedNumber;
+		}
 	};
 	
 	return InlineCompareView;

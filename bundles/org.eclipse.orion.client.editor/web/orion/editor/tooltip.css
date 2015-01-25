@@ -48,3 +48,13 @@
 .tooltipTheme .annotationLine.currentLine {
 	background-color: transparent !important;
 }
+
+.textviewTooltip .commandButton {
+	border: 0;
+	background-color: inherit;
+	color: #3333CC;
+}
+
+.textviewTooltip .commandButton:not(.dropdownTrigger){
+  text-transform: initial; 
+}

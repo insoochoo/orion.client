@@ -283,7 +283,7 @@ define(["orion/Deferred", "orion/EventTarget", "orion/URL-shim"], function(Defer
                 }
             });
 
-            var response = typeof messageId === undefined ? null : {
+            var response = typeof messageId === "undefined" ? null : {
                 id: messageId,
                 result: null,
                 error: null
@@ -363,6 +363,8 @@ define(["orion/Deferred", "orion/EventTarget", "orion/URL-shim"], function(Defer
                         if (response && method === "progress" && response.progress) {
                             response.progress.apply(response, params);
                         }
+                    } else if ("loading" === message.method) {
+                        _channel.loading();
                     } else {
                         if ("plugin" === message.method) { //$NON-NLS-0$
                         	_channel.connected();
@@ -954,13 +956,17 @@ define(["orion/Deferred", "orion/EventTarget", "orion/URL-shim"], function(Defer
                     clearTimeout(loadTimeout);
                     loadTimeout = setTimeout(sendTimeout.bind(null, "Plugin handshake timeout for: " + url), 5000);
                 };
-                iframe.sandbox = "allow-scripts allow-same-origin"; //$NON-NLS-0$
+                iframe.sandbox = "allow-scripts allow-same-origin allow-forms"; //$NON-NLS-0$
         		iframe.style.width = iframe.style.height = "100%"; //$NON-NLS-0$
 	        	iframe.frameBorder = 0;
                 (parent || _parent).appendChild(iframe);
                 channel.target = iframe.contentWindow;
                 channel.connected = function() {
                 	clearTimeout(loadTimeout);
+                };
+                channel.loading = function() {
+                	clearTimeout(loadTimeout);
+                	loadTimeout = setTimeout(sendTimeout.bind(null, "Plugin handshake timeout for: " + url), 60000);
                 };
                 channel.close = function() {
                     clearTimeout(loadTimeout);

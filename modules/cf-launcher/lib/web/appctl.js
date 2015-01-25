@@ -27,7 +27,8 @@ function appman(processManager, userAppName) {
 
 	router.all("/", function(req, res, next) {
 		// Redirect requests for the root to the default app
-		res.redirect(userAppName);
+		// Code 307 prevents clients from changing the method to GET upon following the redirect.
+		res.redirect(307 /*temporary*/, userAppName);
 	});
 
 	router.route("/:appName")
@@ -63,6 +64,7 @@ function appman(processManager, userAppName) {
 function toJSON(app) {
 	return {
 		name: app.name,
+		label: app.label || app.name,
 		state: app.state,
 		tail: app.getTail() || []
 	};

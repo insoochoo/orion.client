@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2013, 2014 IBM Corporation and others.
+ * Copyright (c) 2013 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials are made 
  * available under the terms of the Eclipse Public License v1.0 
  * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
@@ -8,11 +8,8 @@
  * 
  * Contributors: IBM Corporation - initial API and implementation
  ******************************************************************************/
-/*eslint-env browser,amd*/
-
-//NLS_CHARSET=UTF-8
-
-define({
+ /*eslint-env browser,amd*/
+define({//Default message bundle
 	"API URL": "API URL:",
 	"Manage URL": "Manage URL:",
 	"URLs": "URLs",
@@ -71,7 +68,7 @@ define({
 	"applicationFrom/": "application from /",
 	"on": " on ",
 	"user:": "User:",
-	"instance(s)Running": " instance(s) running",
+	"${0}of${1}instance(s)Running": "${0} of ${1} instance(s) running",
 	"of": " of ",
 	"applicationIsNotRunning": "Application is not running",
 	"${0}/${1}Instance(s)Running": "${0}/${1} instance(s) running",
@@ -194,7 +191,9 @@ define({
 	"space*:": "Space*:",
 	"applicationName*:": "Application Name*:",
 	"debugWith${0}:": "Debug with ${0}:",
+	"runInDebugMode": "Run in debug mode",
 	"requiredToPreventRandomAccess": "Required to prevent random access to cf-launcher",
 	"uRLPrefix:": "URL Prefix: ",
-	"leaveBlankForDefault": "Leave blank for default ${0}"
+	"leaveBlankForDefault": "Leave blank for default ${0}",
+	"createNew": "Create New"
 });

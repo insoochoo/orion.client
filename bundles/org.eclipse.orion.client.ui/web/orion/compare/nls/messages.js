@@ -8,14 +8,6 @@
  * 
  ******************************************************************************/
 /*eslint-env browser, amd*/
-define(['orion/i18n!orion/compare/nls/messages', 'orion/compare/nls/root/messages'], function(bundle, root) {
-	var result = {
-			root:root
-	};
-	Object.keys(bundle).forEach(function(key) {
-		if (typeof result[key] === 'undefined') { //$NON-NLS-0$
-			result[key] = bundle[key];
-		}
-	});
-	return result;
+define({
+	root:true
 });

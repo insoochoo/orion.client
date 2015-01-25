@@ -7,10 +7,8 @@
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
 /*eslint-env browser, amd*/
-define({
+define({//Default message bundle
 	"PluginContentNotFound": "Plugin content could not be found",
 	"ContentSavedMsg": "Content has been saved.  Click OK to go to the navigator, Cancel to keep editing.",
 	"ContentSavedData": "Content plugin ${0} has saved data.",

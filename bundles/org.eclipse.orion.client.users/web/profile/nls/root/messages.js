@@ -1,16 +1,14 @@
 /*******************************************************************************
  * @license
- * Copyright (c) 2012, 2014 IBM Corporation and others.
+ * Copyright (c) 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials are made 
  * available under the terms of the Eclipse Public License v1.0 
  * (http://www.eclipse.org/legal/epl-v10.html), and the Eclipse Distribution 
  * License v1.0 (http://www.eclipse.org/org/documents/edl-v10.html). 
  * 
  ******************************************************************************/
-
-//NLS_CHARSET=UTF-8
-
-define({
+/*eslint-env browser, amd*/
+define({//Default message bundle
 	"Loading ${0}...": "Loading ${0}...",
 	"User is not defined": "User is not defined",
 	"type is missing!": "type is missing!",
@@ -46,7 +44,7 @@ define({
 	"Show previous page of Users names": "Show previous page of Users names",
 	"Next Page >": "Next Page >",
 	"Show next page of User names": "Show next page of User names",
-	"Login:" : "Login:",
+	"User Name:" : "User Name:",
 	"Password:" : "Password:",
 	"Retype password:" : "Retype password:",
 	"Email:" : "Email:",
